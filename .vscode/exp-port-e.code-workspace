@@ -1,0 +1,24 @@
+{
+	"folders": [
+		{
+			"name": "Expérimentation PortE",
+			"path": "../"
+		},
+		{
+			"name": "Gestion Accès - NestJS",
+			"path": "../GestionAcces/backend"
+		},
+		{
+			"name": "Gestion Accès - React",
+			"path": "../GestionAcces/frontend"
+		}
+	],
+	"settings": {
+		"git.ignoreLimitWarning": true
+	},
+	"launch": {
+		"version": "0.2.0",
+		"configurations": [],
+		"compounds": [],
+	}
+}
