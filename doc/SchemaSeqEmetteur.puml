@@ -1,0 +1,147 @@
+'*************
+'VERSION FRANÇAISE
+'*************
+
+@startuml SchemaEmetteur
+autonumber
+
+'*************
+'Déclaration de participants
+'*************
+actor "Gestionnaire \nd'accès" as Gestionnaire
+database "DB" as DB #LightBlue
+actor Employé as Employee
+participant "Boîte eMail" as Boite
+participant  "Portefeuille \nNumérique" as Wallet
+participant "Agent médiateur" as AM
+participant "Émetteur \nService de vérification \nde courriel" as Emetteur
+participant "Émetteur \nACA-Py" as ACAPY   
+collections CANdy
+
+'**************
+'DÉFINITION DES LIENS
+'**************
+Gestionnaire -> DB : Création du profil usager
+Gestionnaire -> DB : Donner accès
+Employee -> Emetteur : Saisir courriel
+Emetteur <-> ACAPY : Demander lien d'invitation
+'Emetteur <-> DB : Vérification de l'accès
+Emetteur -> Boite : Envoie un courriel avec un lien à utilisation unique
+Employee -> Boite : Lire courriel \net clic sur le lien à utilisation unique
+Boite -> Emetteur : Affichage du code QR et d'un deepLink
+
+group Méthode de communication du portefeuille numérique
+    alt Lecture du Code QR
+        Employee -> Wallet : ouvrir le portefeuille numérique
+        Wallet -> Emetteur : Lecture du Code QR par le portefeuille numérique
+    end
+
+    alt Deeplink invoqué
+        Employee -> Emetteur : Bouton avec lien de type DeepLink qui invoque l'ouverture du portefeuille numérique
+        Emetteur -> Wallet : ouverture automatique du portefeuille
+    end
+end
+Wallet -> Wallet : Lire URL d'invitation
+Wallet -> ACAPY : Demande de connexion sur l'URL d'invitation
+AM <--> ACAPY : Établissement de connexion
+
+loop L'Émetteur attend l'établissement d'une connexion sur l'invitation
+    Emetteur -> ACAPY : Request challenge status
+    ACAPY --> Emetteur : "connexion_establish" response
+    'ACAPY -> Emetteur : Webhook annonce une nouvelle demande d'attestation
+end
+
+Emetteur <--> DB : Lecture des privilèges
+Emetteur -> Emetteur : Générer l'attestation d'accès selon les privilèges
+Emetteur  -> ACAPY : Offre attestation d'accès
+AM <- ACAPY : Offre attestation d'accès
+AM -> Wallet : Offre attestation d'accès
+CANdy <- Wallet : Validation de l'authenticité
+
+group Consentement
+    alt Accepter
+        Wallet <- Employee : Acceptation de l'attestation
+        ACAPY -> Wallet : Réception de l'attestation
+        Wallet -> Wallet : Consigner l'attestation dans la zone sécurisé de l'application portefeuille
+    end
+
+    alt Refuser
+        Wallet <- Employee : Refuser l'attestation
+    end 
+end
+
+@enduml
+
+'*************
+'VERSION ANGLAISE
+'*************
+
+@startuml SchemaEmetteur-EN
+autonumber
+
+'*************
+'Déclaration de participants
+'*************
+actor "Access manager" as Gestionnaire
+database "DB" as DB #LightBlue
+actor Employee as Employee
+participant "Email Inbox" as Boite
+participant  "Wallet" as Wallet
+participant "Mediator agent" as AM
+participant "Email Verification Service\n Issuer" as Emetteur
+participant "ACA-Py\n Issuer" as ACAPY   
+collections CANdy
+
+'**************
+'DÉFINITION DES LIENS
+'**************
+Gestionnaire -> DB : Create user profile
+Gestionnaire -> DB : Grant access
+Employee -> Emetteur : Type in email address
+Emetteur <-> ACAPY : Request invitation link
+'Emetteur <-> DB : Vérification de l'accès
+Emetteur -> Boite : Sends an email with a one-time link
+Employee -> Boite : Read email \n and click on one-time link
+Boite -> Emetteur : Display QR code and a deepLink
+
+group  Wallet communication method
+    alt QR Code Reading
+        Employee -> Wallet : Open wallet
+        Wallet -> Emetteur : Read QR code with wallet
+    end
+
+    alt Deeplink invoked
+        Employee -> Emetteur : DeepLink button that invokes the opening of the digital wallet
+        Emetteur -> Wallet : Automatic wallet opening
+    end
+end
+Wallet -> Wallet : Read URL invitation
+Wallet -> ACAPY : Connection request on the invitation URL
+AM <--> ACAPY : Connection establishment
+
+loop The issuer waits for a connection to be established on the invitation
+    Emetteur -> ACAPY : Request challenge status
+    ACAPY --> Emetteur : "connexion_establish" response
+    'ACAPY -> Emetteur : Webhook annonce une nouvelle demande d'attestation
+end
+
+Emetteur <--> DB : Read privileges
+Emetteur -> Emetteur : Generate the access credential according to the privileges
+Emetteur  -> ACAPY : Offer access credential 
+AM <- ACAPY : Offer access credential 
+AM -> Wallet : Offer access credential 
+CANdy <- Wallet : Authenticity validation 
+
+group Consent
+    alt Accept
+        Wallet <- Employee : Accept credential
+        ACAPY -> Wallet : Receive credential
+        Wallet -> Wallet : Save credential in the secure enclave of ​​the wallet application
+    end
+
+    alt Refuse
+        Wallet <- Employee : Refuse credential
+    end 
+end
+
+@enduml

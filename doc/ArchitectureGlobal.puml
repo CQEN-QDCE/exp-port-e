@@ -1,0 +1,500 @@
+'*************
+'VERSION FRANÇAISE
+'*************
+
+@startuml  Achitecture Global-FR
+!pragma revision 1
+
+title
+    Port-E
+    Architecture technologique
+    Expérimentation du portefeuille en tant qu'employé
+end title
+
+caption Diagramme d'architecteurs des composants par rapports aux différents acteurs
+
+'********************
+'DÉFINITION DES OBJETS DU DIAGRAMME
+'********************
+' Références graphique
+' L'information se retrouve ici pour utiliser les icon AWS avec plant UML : https://github.com/awslabs/aws-icons-for-plantuml
+' La liste de tous les icones disponibles sont référencés ici : https://github.com/awslabs/aws-icons-for-plantuml/blob/main/AWSSymbols.md
+' Sinon tous les icones natifs de plantUML sont aussi utilisables.
+!define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v14.0/dist
+!define AzurePuml https://raw.githubusercontent.com/plantuml-stdlib/Azure-PlantUML/release/2-2/dist
+
+' Composants graphique
+!include AWSPuml/AWSSimplified.puml
+!includeurl AzurePuml/AzureSimplified.puml
+
+!include AWSPuml/Analytics/CloudSearchSearchDocuments.puml
+!include AWSPuml/ApplicationIntegration/ConsoleMobileApplication.puml
+!include AWSPuml/General/Mobileclient.puml
+!include AWSPuml/Blockchain/Blockchain.puml
+!include AWSPuml/BusinessApplications/SimpleEmailService.puml
+!include AWSPuml/BusinessApplications/SimpleEmailServiceEmail.puml
+!include AWSPuml/Containers/all.puml
+!include AWSPuml/Database/all.puml
+!include AWSPuml/General/all.puml
+!include AWSPuml/General/GenericApplication.puml
+'!include AWSPuml/Groups/all.puml
+!include AWSPuml/InternetOfThings/IoTThingDoorLock.puml
+!include AWSPuml/SecurityIdentityCompliance/Cognito.puml
+!include AWSPuml/SecurityIdentityCompliance/IAMIdentityCenter.puml
+!include AWSPuml/Storage/SimpleStorageServiceS3Standard.puml
+
+!includeurl AzurePuml/Blockchain/AzureBlockchainConsortium.puml
+!includeurl AzurePuml/Integration/AzureEventGrid.puml
+!includeurl AzurePuml/Mobile/AzureMobileApp.puml
+!includeurl AzurePuml/Networking/AzureFrontDoor.puml
+!includeurl AzurePuml/Stack/AzureStackCapacity.puml
+!includeurl AzurePuml/Web/AzureWebApp.puml
+!includeurl AzurePuml/Web/AzureContainerSettings.puml
+
+left to right direction
+Users(dir, "Directeurs", "Approbation des accès")
+Users(admin, "Administrateur(e)s CEAI", "Donneur d'accès")
+Users(adj, "Adjoint(e)s", "Donneur d'accès")
+Users(rep, "Représentant(e)s", "Donneur d'accès")
+User(emp, "Employé(e)", "L'utilisateur")
+AzureBlockchainConsortium(dltCANdy, "Chaîne de blocs\nCANdy", "Registre de confiance") #LightGreen
+
+
+rectangle "GESTION DES ACCÈS" {
+    rectangle "ATTRIBUTION D'ACCÈS" {
+        package Authentifications as auth1 {
+            rectangle "<$AzureFrontDoor>\nKeycloak Lab CEAI\nRealm Port-E" as UC0 #Yellow
+        }
+
+        package "Octroyer l'accès" {
+            rectangle "<$AzureWebApp>\nSite Web\nGestion des accès\nInterface pour sélectionner les accès à octroyer" as webApp #Yellow {
+                rectangle "$ChatIMG()\nEnvoie d'alertes\net de message d'intérêt" #Yellow
+            }
+            rectangle "<$AzureEventGrid>\nAPI consigner l'accès\nvirtuel et physique\n(NestJS)" as apiApp #Yellow
+            database "$AuroraPostgreSQLInstanceIMG()\nBD OffChain Data" as dbOffchain #Yellow
+        }
+
+        package "Gestionnaire Accès" {
+            rectangle "<$AzureEventGrid>\nAPI Centre d'expertise appliquée en innovation du CQEN (CEAI)" as ceai #LightGreen
+            rectangle "<$AzureEventGrid>\nAPI Realm des outils de travail\n(Taiga et Odoo)" as apiOutils #Yellow
+            rectangle "<$AzureEventGrid>\nAPI Accès physique" as physique #Yellow
+        }
+    }
+
+    rectangle "ÉMISSION ACCÈS" {
+        package "Libre service de l'émission des accès" {
+            rectangle "<$AzureContainerSettings>\nSite Web\nContrôleur Émetteur" as controllerIssuer #LightGreen
+            database "$AuroraPostgreSQLInstanceIMG()\nDB Contrôleur" as dbC #LightGreen
+
+            package "ACA-PY" as AgentI {
+                rectangle "$ElasticContainerServiceContainer1IMG()\nAgent Émetteur" as agentIssuer #LightGreen
+                database "$AuroraPostgreSQLInstanceIMG()\nAgent Wallet" as kmsIssuer #LightGreen
+                rectangle "$ElasticContainerServiceContainer1IMG()\nTail" as tailServerIssuer #LightGreen
+            }
+            
+            rectangle "<$AzureStackCapacity>\nBackup" as bk1 #Yellow
+            rectangle "$SimpleEmailServiceIMG()\nSMTP\nEnvoi de courriels" as smtp #LightGreen
+        }
+    }
+}
+
+rectangle "DÉTENTEUR D'ACCÈS" {
+    rectangle "$MobileclientIMG()\nMobile" as cellEmp {
+        rectangle "<$AzureMobileApp>\nPortefeuille numérique" as appEmp {
+            rectangle "$CognitoIMG()\nAttestation vérifiable\ndu courriel" as vcEmail #LightGreen
+            
+            rectangle "$CloudSearchSearchDocumentsIMG()\nGestion du consentement\npour les demandes subséquentes" as vcConsent #Yellow
+            rectangle "$ChatIMG()\nRéception d'alertes\net de message d'intérêt" #LightGreen
+        }
+        rectangle "$ConsoleMobileApplicationIMG()\nMagasins d'applications\n(TestFlight Apple)\nPipeline de déploiement automatisé" as appStore #LightGreen
+    }
+
+    package "ACA-PY" as AgentM {
+        rectangle "$ElasticContainerServiceContainer1IMG()\nAgent Médiateur" as agentMediator #LightGreen
+        database "$AuroraPostgreSQLInstanceIMG()\Agent Wallet" as kmsM #LightGreen
+    }
+
+    rectangle "$SimpleEmailServiceEmailIMG()\nBoîte de courriels" as boiteEmail #LightGreen
+}
+
+rectangle "UTILISATION D'ACCÈS" {
+    package "Authentification aux outils de travail" as auth2 {
+        package "Authentification" {
+            rectangle "<$AzureFrontDoor>\nKeycloak Lab CEAI" as UC1 #Yellow
+            rectangle "$IAMIdentityCenterIMG()\nOpenID Provider" as OIP #Yellow
+
+            package "ACA-PY" as AgentC1 {
+                rectangle "$ElasticContainerServiceContainer1IMG()\nAgent consommateur virtuel" as agentConsumerV #Yellow
+                database "$AuroraPostgreSQLInstanceIMG()\Agent Wallet" as kmsCV #Yellow
+            }
+        }
+
+        package "Accès virtuel" {
+            usecase "Lab CEAI" as UC2 #LightGreen
+            usecase "Kanban et Scrum\n(Taiga)" as UC3 #LightGreen
+            usecase "AWS CEAI" as UC5 #LightGreen
+            usecase "OpenShift CEAI" as UC6 #LightGreen
+            usecase "CodeReady CEAI" as UC7 #LightGreen
+            usecase "Gestion clients CQEN\n(Odoo)" as UC8 #Yellow
+        }
+    }
+
+    package "Déverrouillage de portes d’accès sur les lieux de travail" as porte1 {
+        package "Internet des objets - Lecteur NFC aux Portes" {
+            rectangle "$IoTThingDoorLockIMG()\nPorte A\n1500 Cyrille-Duquet\n1er étage" as UC4 #Yellow
+            rectangle "$IoTThingDoorLockIMG()\nPorte B\n150 René-Lévesque Est\n10e étage" as UC9 #Yellow
+        }
+
+        rectangle "<$AzureContainerSettings>\nSite Web\nContrôleur Émetteur" as controllerConsumerP #Yellow
+        package "ACA-PY" as AgentC2 {
+            rectangle "$ElasticContainerServiceContainer1IMG()\nAgent consommateur physique" as agentConsumerP #Yellow
+            database "$AuroraPostgreSQLInstanceIMG()\Agent Wallet" as kmsCP #Yellow        
+        }
+    }
+}
+
+'********************
+'DÉFINITION DES LIENS
+'********************
+
+'--------------------
+'ATTRIBUTION D'ACCÈS
+' Lien interne
+UC0 --> webApp
+apiApp --> physique
+webApp --> apiApp
+apiApp --> dbOffchain
+apiApp --> ceai
+apiApp --> apiOutils
+' Lien externe
+' Directeurs
+dir --> adj
+dir --> rep
+dir --> admin
+' Adjoint(e) 
+adj --> UC0
+' Représentant(e)
+rep --> UC0
+' Administrateur CEAI
+admin --> UC0
+' BD
+
+
+'--------------------
+'ÉMISSION ACCÈS
+'Employé(e)
+' Lien interne
+controllerIssuer -down-> dbC
+controllerIssuer --> smtp
+controllerIssuer <--> apiApp
+apiApp <--> agentIssuer
+agentIssuer -down-> kmsIssuer
+agentIssuer --> tailServerIssuer 
+bk1 --> dbC
+bk1 --> kmsIssuer
+' Lien externe
+emp --> controllerIssuer
+appEmp --> controllerIssuer
+agentIssuer --> dltCANdy
+smtp --> boiteEmail
+emp --> boiteEmail
+boiteEmail --> controllerIssuer
+
+'--------------------
+'DÉTENTEUR ACCÈS
+'Employé(e)
+' Lien interne
+appEmp -down-> agentMediator
+agentMediator -down-> kmsM
+appStore --> appEmp
+' Lien externe
+emp --> appStore
+emp --> appEmp
+appEmp --> dltCANdy
+agentMediator --> dltCANdy
+agentMediator <--> agentIssuer
+
+'--------------------
+'UTILISATIONS ACCÈS
+'Déverrouiller porte
+' Lien interne
+UC4 <--> controllerConsumerP
+UC9 <--> controllerConsumerP
+UC4 <-- agentConsumerP
+UC9 <-- agentConsumerP
+controllerConsumerP -down-> agentConsumerP
+agentConsumerP -down-> kmsCP
+' Lien externe
+controllerConsumerP --> dbOffchain
+agentConsumerP <--> agentMediator
+agentConsumerP --> dltCANdy
+emp --> UC4
+emp --> UC9
+
+'Authentification virtuel
+' Lien interne
+UC1 <--> OIP
+OIP <-down-> agentConsumerV
+agentConsumerV -down-> kmsCV
+'Accès virtuel
+UC1 -right-> UC2
+UC1 -right-> UC3
+UC2 --> UC5
+UC2 --> UC6
+UC2 --> UC7
+UC1 -right-> UC8
+' Lien externe
+agentConsumerV <--> agentMediator
+agentConsumerV --> dltCANdy
+emp --> UC1
+
+@enduml
+
+
+'*************
+'VERSION ANGLAISE
+'*************
+
+@startuml Achitecture Global-EN
+
+!pragma revision 1
+
+title
+    Port-E // E-Wallet//
+    Global Architecture
+    Proof of concept: E-Wallet as an employee
+end title
+
+caption Global diagramme of architecture of components and actors  
+
+'********************
+'DÉFINITION DES OBJETS DU DIAGRAMME
+'********************
+' Références graphique
+' L'information se retrouve ici pour utiliser les icon AWS avec plant UML : https://github.com/awslabs/aws-icons-for-plantuml
+' La liste de tous les icones disponibles sont référencés ici : https://github.com/awslabs/aws-icons-for-plantuml/blob/main/AWSSymbols.md
+' Sinon tous les icones natifs de plantUML sont aussi utilisables.
+!define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v14.0/dist
+!define AzurePuml https://raw.githubusercontent.com/plantuml-stdlib/Azure-PlantUML/release/2-2/dist
+
+' Composants graphique
+!include AWSPuml/AWSSimplified.puml
+!includeurl AzurePuml/AzureSimplified.puml
+
+!include AWSPuml/Analytics/CloudSearchSearchDocuments.puml
+!include AWSPuml/ApplicationIntegration/ConsoleMobileApplication.puml
+!include AWSPuml/General/Mobileclient.puml
+!include AWSPuml/Blockchain/Blockchain.puml
+!include AWSPuml/BusinessApplications/SimpleEmailService.puml
+!include AWSPuml/BusinessApplications/SimpleEmailServiceEmail.puml
+!include AWSPuml/Containers/all.puml
+!include AWSPuml/Database/all.puml
+!include AWSPuml/General/all.puml
+!include AWSPuml/General/GenericApplication.puml
+'!include AWSPuml/Groups/all.puml
+!include AWSPuml/InternetOfThings/IoTThingDoorLock.puml
+!include AWSPuml/SecurityIdentityCompliance/Cognito.puml
+!include AWSPuml/SecurityIdentityCompliance/IAMIdentityCenter.puml
+!include AWSPuml/Storage/SimpleStorageServiceS3Standard.puml
+
+!includeurl AzurePuml/Blockchain/AzureBlockchainConsortium.puml
+!includeurl AzurePuml/Integration/AzureEventGrid.puml
+!includeurl AzurePuml/Mobile/AzureMobileApp.puml
+!includeurl AzurePuml/Networking/AzureFrontDoor.puml
+!includeurl AzurePuml/Stack/AzureStackCapacity.puml
+!includeurl AzurePuml/Web/AzureWebApp.puml
+!includeurl AzurePuml/Web/AzureContainerSettings.puml
+
+left to right direction
+Users(dir, "Directors", "Access approver")
+Users(admin, "Administrator Lab CEAI\n//Center of Applied Innovation//", "Access giver")
+Users(adj, "Adjoint(e)s", "Access giver")
+Users(rep, "Représentant(e)s", "Access giver")
+User(emp, "Employee", "User")
+AzureBlockchainConsortium(dltCANdy, "Blockhain\nCANdy", "Trust register") #LightGreen
+
+
+rectangle "Access Management" {
+    rectangle "ACCESS ALLOCATION" {
+        package Authentifications as auth1 {
+            rectangle "<$AzureFrontDoor>\nKeycloak CEAI Lab\nRealm Port-E" as UC0 #Yellow
+        }
+
+        package "Grant access" {
+            rectangle "<$AzureWebApp>\nWebsite \nAccess management\nInterface to select the accesses to be granted" as webApp #Yellow
+            rectangle "<$AzureEventGrid>\nAPI logging access\nvirtual and physical\n(NestJS)" as apiApp #Yellow
+        }
+
+        package "Access manager" {
+            rectangle "<$AzureEventGrid>\nAPI CEAI Lab)" as ceai #LightGreen
+            rectangle "<$AzureEventGrid>\nAPI Work tools Realm\n(e.g., Taiga et Odoo)" as apiOutils #Yellow
+            rectangle "<$AzureEventGrid>\nAPI Physical access" as physique #Yellow
+        }
+    }
+
+    rectangle "ISSUE ACCESS" {
+        package "Self-service issue access" {
+            rectangle "<$AzureContainerSettings>\nWebsite\nIssuer Controller" as controllerIssuer #LightGreen
+            database "$AuroraPostgreSQLInstanceIMG()\nDB Controller" as dbC #LightGreen
+
+            package "ACA-PY" as AgentI {
+                rectangle "$ElasticContainerServiceContainer1IMG()\nIssuer Agent" as agentIssuer #LightGreen
+                database "$AuroraPostgreSQLInstanceIMG()\nAgent Wallet" as kmsIssuer #LightGreen
+                rectangle "$ElasticContainerServiceContainer1IMG()\nTail" as tailServerIssuer #LightGreen
+            }
+            
+            rectangle "<$AzureStackCapacity>\nBackup" as bk1 #Yellow
+            rectangle "$SimpleEmailServiceIMG()\nSMTP\nEmail send" as smtp #LightGreen
+        }
+    }
+}
+
+rectangle "ACCESS HOLDER" {
+    rectangle "$MobileclientIMG()\nMobile" as cellEmp {
+        rectangle "<$AzureMobileApp>\nDigital Wallet" as appEmp {
+            rectangle "$CognitoIMG()\nEmail verifiable \ncertificate" as vcEmail #LightGreen
+            
+            rectangle "$CloudSearchSearchDocumentsIMG()\nConsent Management\nfor subsequent requests" as vcConsent #Yellow
+        }
+        rectangle "$ConsoleMobileApplicationIMG()\nApp Store\n(TestFlight Apple)\nAutomated deployment pipeline" as appStore #LightGreen
+    }
+
+    package "ACA-PY" as AgentM {
+        rectangle "$ElasticContainerServiceContainer1IMG()\nMediator Agent" as agentMediator #LightGreen
+        database "$AuroraPostgreSQLInstanceIMG()\nWallet Agent" as kmsM #LightGreen
+    }
+
+    rectangle "$SimpleEmailServiceEmailIMG()\nMailbox" as boiteEmail #LightGreen
+}
+
+rectangle "USE OF ACCESS" {
+    package "Authentication for work tools" as auth2 {
+        package "Authentication" {
+            rectangle "<$AzureFrontDoor>\nKeycloak CEAI Lab" as UC1 #Yellow
+            rectangle "$IAMIdentityCenterIMG()\nOpenID Provider" as OIP #Yellow
+
+            package "ACA-PY" as AgentC1 {
+                rectangle "$ElasticContainerServiceContainer1IMG()\nVirtual consumer agent" as agentConsumerV #Yellow
+                database "$AuroraPostgreSQLInstanceIMG()\nWallet Agent" as kmsCV #Yellow
+            }
+        }
+
+        package "Virtual access" {
+            usecase "CEAI Lab" as UC2 #LightGreen
+            usecase "Kanban et Scrum\n(Taiga)" as UC3 #LightGreen
+            usecase "AWS CEAI" as UC5 #LightGreen
+            usecase "OpenShift CEAI" as UC6 #LightGreen
+            usecase "CodeReady CEAI" as UC7 #LightGreen
+            usecase "CRM CQEN\n(Odoo)" as UC8 #Yellow
+        }
+    }
+
+    package "Unlocking access doors in the workplace" as porte1 {
+        package "Internet of Things - Door NFC Readers" {
+            rectangle "$IoTThingDoorLockIMG()\nDoor A\n1st floor" as UC4 #Yellow
+            rectangle "$IoTThingDoorLockIMG()\nDoor B\n10th floor" as UC9 #Yellow
+        }
+
+        rectangle "<$AzureContainerSettings>\nWebsite\nIssuer Controller" as controllerConsumerP #Yellow
+        package "ACA-PY" as AgentC2 {
+            rectangle "$ElasticContainerServiceContainer1IMG()\nPhysical consumer agent" as agentConsumerP #Yellow
+            database "$AuroraPostgreSQLInstanceIMG()\nWallet agent" as kmsCP #Yellow        
+        }
+    }
+}
+
+'********************
+'DÉFINITION DES LIENS
+'********************
+
+'--------------------
+'ATTRIBUTION D'ACCÈS
+' Lien interne
+UC0 --> webApp
+webApp --> physique
+webApp -down-> apiApp
+webApp --> ceai
+webApp --> apiOutils
+' Lien externe
+' Directeurs
+dir --> adj
+dir --> rep
+dir --> admin
+' Adjoint(e) 
+adj --> UC0
+' Représentant(e)
+rep --> UC0
+' Administrateur CEAI
+admin --> UC0
+' BD
+apiApp --> dbC
+
+'--------------------
+'ÉMISSION ACCÈS
+'Employé(e)
+' Lien interne
+controllerIssuer -down-> dbC
+controllerIssuer -down-> agentIssuer
+controllerIssuer --> smtp
+agentIssuer -down-> kmsIssuer
+agentIssuer --> tailServerIssuer 
+bk1 --> dbC
+bk1 --> kmsIssuer
+' Lien externe
+emp --> controllerIssuer
+appEmp --> controllerIssuer
+agentIssuer --> dltCANdy
+smtp --> boiteEmail
+emp --> boiteEmail
+boiteEmail --> controllerIssuer
+
+'--------------------
+'DÉTENTEUR ACCÈS
+'Employé(e)
+' Lien interne
+appEmp -down-> agentMediator
+agentMediator -down-> kmsM
+appStore --> appEmp
+' Lien externe
+emp --> appStore
+emp --> appEmp
+appEmp --> dltCANdy
+agentMediator --> dltCANdy
+agentMediator <--> agentIssuer
+
+'--------------------
+'UTILISATIONS ACCÈS
+'Déverrouiller porte
+' Lien interne
+UC4 <--> controllerConsumerP
+UC9 <--> controllerConsumerP
+UC4 <-- agentConsumerP
+UC9 <-- agentConsumerP
+controllerConsumerP -down-> agentConsumerP
+agentConsumerP -down-> kmsCP
+' Lien externe
+controllerConsumerP --> dbC
+agentConsumerP <--> agentMediator
+agentConsumerP --> dltCANdy
+emp --> UC4
+emp --> UC9
+
+'Authentification virtuel
+' Lien interne
+UC1 <--> OIP
+OIP <-down-> agentConsumerV
+agentConsumerV -down-> kmsCV
+'Accès virtuel
+UC1 -right-> UC2
+UC1 -right-> UC3
+UC2 --> UC5
+UC2 --> UC6
+UC2 --> UC7
+UC1 -right-> UC8
+' Lien externe
+agentConsumerV <--> agentMediator
+agentConsumerV --> dltCANdy
+emp --> UC1
+
+@enduml
+

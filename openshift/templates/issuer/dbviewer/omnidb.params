@@ -1,0 +1,13 @@
+#===============================================================================
+# Params pour le template omnidb.yaml
+# 
+# Remplacer les valeurs de secret des variables suivantes: 
+# 
+# ADMIN_API_KEY, SMTP_EMAIL_HOST, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD
+#
+#===============================================================================
+APP_DOMAIN=apps.exp.openshift.cqen.ca
+APP_SUBDOMAIN=exp-port-e-omnidb
+POSTGRESQL_NAME_1=backend-db
+POSTGRESQL_NAME_2=controller-db
+POSTGRESQL_NAME_3=wallet
