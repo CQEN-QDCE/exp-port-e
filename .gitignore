@@ -1,0 +1,12 @@
+*.adoc
+*.ods
+tmp/*
+.DS_Store
+*.xcf
+out
+*.env
+*.env.*
+
+# Fichier de secrets
+constants.ts
+docker.env

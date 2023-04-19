@@ -1,0 +1,165 @@
+######################################################################
+# oc process -f ./pgadmin-port-e-deploy.yaml --param-file=./pgadmin-port-e-deploy.params | oc apply -f -
+######################################################################
+kind: Template
+apiVersion: template.openshift.io/v1
+metadata:
+  annotations:
+    description: Deployment template for a pgadmin server with persistent storage.
+    tags: pgadmin4
+  name: pgadmin4-persistent-template
+objects:
+  - kind: DeploymentConfig
+    apiVersion: apps.openshift.io/v1
+    metadata:
+      name: pgadmin4
+      labels:
+        app: pgadmin4
+        app.kubernetes.io/component: pgadmin4
+        app.kubernetes.io/instance: pgadmin4
+        app.kubernetes.io/name: pgadmin4
+    spec:
+      strategy:
+        type: Recreate
+      replicas: 1
+      revisionHistoryLimit: 10
+      test: false
+      selector:
+        app: pgadmin4
+        deploymentconfig: pgadmin4
+      template:
+        metadata:
+          labels:
+            app: pgadmin4
+            deploymentconfig: pgadmin4
+        spec:
+          volumes:
+            - name: pgadmin4-1
+              emptyDir: {}
+          containers:
+            - resources: {}
+              terminationMessagePath: /dev/termination-log
+              name: pgadmin4
+              env:
+                - name: PGADMIN_DEFAULT_EMAIL
+                  valueFrom:
+                        secretKeyRef:
+                          name: pgadmin4
+                          key: default-email
+                - name: PGADMIN_DEFAULT_PASSWORD
+                  valueFrom:
+                        secretKeyRef:
+                          name: pgadmin4
+                          key: admin-password
+              image: "dpage/pgadmin4:6.20"
+              ports:
+                - containerPort: 443
+                  protocol: TCP
+                - containerPort: 80
+                  protocol: TCP
+              imagePullPolicy: IfNotPresent
+              volumeMounts:
+                - name: pgadmin4-1
+                  mountPath: /var/lib/pgadmin
+              terminationMessagePolicy: File
+          restartPolicy: Always
+          terminationGracePeriodSeconds: 30
+          dnsPolicy: ClusterFirst
+          securityContext: {}
+          schedulerName: default-scheduler
+
+  - kind: Secret
+    apiVersion: v1
+    metadata:
+      name: pgadmin4
+    stringData:
+      default-email: ${PGADMIN_DEFAULT_EMAIL}
+      admin-password: ${PGADMIN_DEFAULT_PASSWORD}
+    type: Opaque
+
+  - kind: Service
+    apiVersion: v1
+    metadata:
+      name: pgadmin4
+      labels:
+        app: pgadmin4
+        app.kubernetes.io/component: pgadmin4
+        app.kubernetes.io/instance: pgadmin4
+        app.kubernetes.io/name: pgadmin4
+    spec:
+      ports:
+        - name: 443-tcp
+          protocol: TCP
+          port: 443
+          targetPort: 443
+        - name: 80-tcp
+          protocol: TCP
+          port: 80
+          targetPort: 80
+      internalTrafficPolicy: Cluster
+      type: ClusterIP
+      ipFamilyPolicy: SingleStack
+      sessionAffinity: None
+      selector:
+        app: pgadmin4
+        deploymentconfig: pgadmin4
+    status:
+      loadBalancer: {}
+
+  - kind: Route
+    apiVersion: route.openshift.io/v1
+    metadata:
+      name: pgadmin4
+      labels:
+        app: pgadmin4
+        app.kubernetes.io/component: pgadmin4
+        app.kubernetes.io/instance: pgadmin4
+        app.kubernetes.io/name: pgadmin4
+    spec:
+      host: pgadmin4.apps.exp.openshift.cqen.ca
+      to:
+        kind: Service
+        name: pgadmin4
+        weight: 100
+      port:
+        targetPort: 80-tcp
+      tls:
+        termination: edge
+        insecureEdgeTerminationPolicy: Redirect
+      wildcardPolicy: None
+    status:
+      ingress:
+        - host: pgadmin4.apps.exp.openshift.cqen.ca
+          routerName: default
+          conditions:
+            - type: Admitted
+              status: 'True'
+          wildcardPolicy: None
+          routerCanonicalHostname: router-default.apps.exp.openshift.cqen.ca
+
+
+######################################################################
+# Parameters
+######################################################################
+parameters:
+- name: NAME
+  displayName: Application name 
+  description: The TAG name for this application. 
+  required: true
+  value: 'pgadmin'
+- name: SUFFIX
+  displayName: Suffix
+  description: A suffix applied to all the objects in this template.
+  required: false
+  value: '-app'
+- name: PGADMIN_DEFAULT_EMAIL
+  displayName: Default email
+  description: Used to register a user into pradmin console administration.
+  required: true
+  value: 'default'
+- name: PGADMIN_DEFAULT_PASSWORD
+  displayName: Default password 
+  description: Password for pgadmin's default user.
+  required: true
+  value: 'default'
+

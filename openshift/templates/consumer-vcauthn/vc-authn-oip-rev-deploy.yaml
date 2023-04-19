@@ -1,0 +1,646 @@
+######################################################################
+# oc process -f vc-authn-oip-rev-deploy.yaml --param-file=vc-authn-oip-rev-deploy.param | oc apply -f -
+######################################################################
+
+apiVersion: v1
+kind: Template
+metadata:
+  annotations:
+    description: Deployment template for a .NET Core OIDC Controller
+    tags: dotnet
+  name: ${PREFIX}${NAME}-deployment-template
+objects:
+######################################################################
+# Database PostgreSQL
+######################################################################
+- kind: PersistentVolumeClaim
+  apiVersion: v1
+  metadata:
+    name: ${POSTGRESQL_NAME}-files
+    labels:
+      name: ${POSTGRESQL_NAME}-files
+      app: ${APP_GROUP}
+      app.kubernetes.io/part-of: ${APP_GROUP}
+      app-group: ${APP_GROUP}
+      role: bd-oip
+      env: ${ENV_NAME}
+  spec:
+    storageClassName: ${PERSISTENT_VOLUME_CLASS}
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: ${POSTGRESQL_VOLUME_SIZE}
+
+- kind: Secret
+  apiVersion: v1
+  metadata:
+    name: ${POSTGRESQL_NAME}
+    labels:
+      name: ${POSTGRESQL_NAME}
+      app: ${APP_GROUP}
+      app.kubernetes.io/part-of: ${APP_GROUP}
+      app-group: ${APP_GROUP}
+      role: bd-oip
+      env: ${ENV_NAME}
+  stringData:
+    database-hostname: ${POSTGRESQL_NAME}
+    database-name: ${POSTGRESQL_NAME}
+    database-port: ${POSTGRESQL_PORT}
+    database-admin-user: "postgres"
+    database-admin-password: ${POSTGRESQL_ADMIN_PASSWORD}
+    database-user: ${POSTGRESQL_USER}
+    database-password: ${POSTGRESQL_PASSWORD}
+    database-connectionstring: Host=${POSTGRESQL_NAME};Port=${POSTGRESQL_PORT};Database=${POSTGRESQL_NAME};Username=${POSTGRESQL_USER};Password=${POSTGRESQL_PASSWORD};
+  type: Opaque
+
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: ${POSTGRESQL_NAME}
+    labels:
+      name: ${POSTGRESQL_NAME}
+      app: ${APP_GROUP}
+      app.kubernetes.io/part-of: ${APP_GROUP}
+      app-group: ${APP_GROUP}
+      role: bd-oip
+      env: ${ENV_NAME}
+  spec:
+    ports:
+    - name: ${POSTGRESQL_NAME}
+      protocol: TCP
+      port: ${{POSTGRESQL_PORT}}
+      targetPort: 5432
+      nodePort: 0
+    selector:
+      name: ${POSTGRESQL_NAME}
+    type: ClusterIP
+    sessionAffinity: None
+  status:
+    loadBalancer: {}
+
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    name: ${POSTGRESQL_NAME}
+    annotations:
+      template.alpha.openshift.io/wait-for-ready: 'true'
+    labels:
+      name: ${POSTGRESQL_NAME}
+      app: ${APP_GROUP}
+      app.kubernetes.io/part-of: ${APP_GROUP}
+      app-group: ${APP_GROUP}
+      role: bd-oip
+      env: ${ENV_NAME}
+  spec:
+    strategy:
+      type: Recreate
+    triggers:
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+        - ${POSTGRESQL_NAME}
+        from:
+          kind: ImageStreamTag
+          name: ${POSTGRESQL_IMAGE}:${POSTGRESQL_TAG}
+          namespace: ${IMAGE_NAMESPACE}
+        lastTriggeredImage: ''
+    - type: ConfigChange
+    replicas: 1
+    selector:
+      name: ${POSTGRESQL_NAME}
+    template:
+      metadata:
+        labels:
+          name: ${POSTGRESQL_NAME}
+      spec:
+        containers:
+        - name: ${POSTGRESQL_NAME}
+          image:
+          ports:
+          - containerPort: ${{POSTGRESQL_PORT}}
+            protocol: TCP
+          readinessProbe:
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+            exec:
+# TODO, chercher comment utiliser les variables de nos secret au lieu de coder en dur pour la commande du readinessProbe
+#              command:
+#                - /bin/sh
+#                - -i
+#                - -c
+#                - psql -h 127.0.0.1 -U $POSTGRESQL_USER -d $POSTGRESQL_NAME
+#                - psql -h 0.0.0.0 -U $POSTGRESQL_USER -d $POSTGRESQL_NAME
+#                - psql -h 127.0.0.1 -U $POSTGRESQL_USER -q -d $POSTGRESQL_NAME -c 'SELECT 1'
+#              command: ["psql", "-w", "-U", ${{POSTGRESQL_USER}}, "-d", ${{POSTGRESQL_NAME}}, "-c", "SELECT 1"]
+              command: ["psql", "-w", "-U", "dbuser", "-d", "postgres", "-c", "SELECT 1"]
+          livenessProbe:
+            tcpSocket:
+              port: 5432
+            initialDelaySeconds: 120
+            timeoutSeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          env:
+          - name: POSTGRESQL_USER
+            valueFrom:
+              secretKeyRef:
+                name: ${POSTGRESQL_NAME}
+                key: database-user
+          - name: POSTGRESQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: ${POSTGRESQL_NAME}
+                key: database-password
+          - name: POSTGRESQL_DATABASE
+            valueFrom:
+              secretKeyRef:
+                name: ${POSTGRESQL_NAME}
+                key: database-name
+          - name: POSTGRESQL_ADMIN_USER
+            valueFrom:
+              secretKeyRef:
+                name: ${POSTGRESQL_NAME}
+                key: database-admin-user
+          - name: POSTGRESQL_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: ${POSTGRESQL_NAME}
+                key: database-admin-password                
+          volumeMounts:
+          - name: ${POSTGRESQL_NAME}-files
+            mountPath: "/var/lib/pgsql/data"
+          terminationMessagePath: "/dev/termination-log"
+          imagePullPolicy: IfNotPresent
+          capabilities: {}
+          securityContext:
+            capabilities: {}
+            privileged: false
+        volumes:
+        - name: ${POSTGRESQL_NAME}-files
+          persistentVolumeClaim:
+            claimName: ${POSTGRESQL_NAME}-files
+        restartPolicy: Always
+        dnsPolicy: ClusterFirst
+  status: {}
+
+######################################################################
+# OpenID Provider
+# System.ArgumentException: Couldn't set port (Parameter 'port')
+######################################################################
+- kind: NetworkPolicy
+  apiVersion: networking.k8s.io/v1
+  metadata:
+    name: ${PREFIX}${NAME}-allow-ingress
+    labels:
+      name: ${PREFIX}${NAME}-allow-ingress
+      app: ${APP_GROUP}
+      app.kubernetes.io/part-of: ${APP_GROUP}
+      app-group: ${APP_GROUP}
+      role: ${ROLE}
+      env: ${ENV_NAME}
+  spec:
+    description: |
+      Allow traffic from routes into the vc-authn-controller container(s).
+    ingress:
+      - from:
+          - namespaceSelector:
+              matchLabels:
+                network.openshift.io/policy-group: ingress
+    podSelector:
+      matchLabels:
+        name: ${PREFIX}${NAME}
+        app: ${APP_GROUP}
+        app-group: ${APP_GROUP}
+        role: ${PREFIX}${ROLE}
+        env: ${ENV_NAME}
+    policyTypes:
+      - Ingress
+
+- kind: NetworkPolicy
+  apiVersion: networking.k8s.io/v1
+  metadata:
+    name: ${PREFIX}${NAME}
+    labels:
+      name: ${PREFIX}${NAME}
+      app: ${APP_GROUP}
+      app.kubernetes.io/part-of: ${APP_GROUP}
+      app-group: ${APP_GROUP}
+      role: ${PREFIX}${ROLE}
+      env: ${ENV_NAME}
+  spec:
+    description: |
+      Allow the vc-authn agent to access the controller.
+    ingress:
+      - from:
+          - podSelector:
+              matchLabels:
+                role: ${PREFIX}${AGENT_ROLE}
+                app: ${APP_GROUP}
+                env: ${ENV_NAME}
+            namespaceSelector:
+              matchLabels:
+                name: ${NAMESPACE_NAME}
+                environment: ${ENV_NAME}
+        ports:
+          - protocol: TCP
+            port: 8080
+    podSelector:
+      matchLabels:
+        name: ${PREFIX}${NAME}
+        app: ${APP_GROUP}
+        app-group: ${APP_GROUP}
+        role: ${PREFIX}${ROLE}
+        env: ${ENV_NAME}
+
+- kind: Secret
+  apiVersion: v1
+  metadata:
+    name: ${PREFIX}${NAME}
+    labels:
+      name: ${PREFIX}${NAME}
+      app: ${APP_GROUP}
+      app.kubernetes.io/part-of: ${APP_GROUP}
+      app-group: ${APP_GROUP}
+      role: ${PREFIX}${ROLE}
+      env: ${ENV_NAME}
+  stringData:
+    controller-api-key: ${CONTROLLER_API_KEY}
+  type: Opaque
+
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    name: ${PREFIX}${NAME}
+    annotations:
+      description: Defines how to deploy the application server
+      app.openshift.io/connects-to: >-
+        [{"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${POSTGRESQL_NAME}"},
+        {"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${ACAPY_NAME}"}]
+    labels:
+      name: ${PREFIX}${NAME}
+      app: ${APP_GROUP}
+      app.kubernetes.io/part-of: ${APP_GROUP}
+      app-group: ${APP_GROUP}
+      role: ${PREFIX}${ROLE}
+      env: ${ENV_NAME}
+  spec:
+    replicas: 1
+    selector:
+      app: ${APP_GROUP}
+      app.kubernetes.io/part-of: ${APP_GROUP}
+      name: ${PREFIX}${NAME}
+      role: ${PREFIX}${ROLE}
+      env: ${ENV_NAME}
+    strategy:
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        annotations:
+          description: Defines how to deploy the application server
+          app.openshift.io/connects-to: >-
+            [{"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${POSTGRESQL_NAME}"},
+            {"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${ACAPY_NAME}"}]
+        labels:
+          name: ${PREFIX}${NAME}
+          app: ${APP_GROUP}
+          app.kubernetes.io/part-of: ${APP_GROUP}
+          app-group: ${APP_GROUP}
+          role: ${PREFIX}${ROLE}
+          env: ${ENV_NAME}
+      spec:
+        volumes:
+          - name: ${PREFIX}${NAME}-data
+            persistentVolumeClaim:
+              claimName: ${PREFIX}${NAME}
+        containers:
+          - image: ${PREFIX}${NAME}
+            imagePullPolicy: Always
+            name: ${PREFIX}${NAME}
+            ports:
+              - containerPort: 5000
+                protocol: TCP
+            env:
+              - name: IdentityServer__ConnectionStrings__Database
+                valueFrom:
+                  secretKeyRef:
+                    name: ${POSTGRESQL_NAME}
+                    key: database-connectionstring
+              - name: UrlShortenerService__ConnectionStrings__Database
+                valueFrom:
+                  secretKeyRef:
+                    name: ${POSTGRESQL_NAME}
+                    key: database-connectionstring
+              - name: SessionStorageService__ConnectionStrings_Database
+                valueFrom:
+                  secretKeyRef:
+                    name: ${POSTGRESQL_NAME}
+                    key: database-connectionstring
+              - name: IdentityServer__CertificateFilename
+                value: ${CONTROLLER_CERTIFICATE_FILE_PATH}
+              - name: IdentityServer__PublicOrigin
+                value: https://${APPLICATION_DOMAIN}
+              - name: ACAPY__AdminUrl
+                value: ${AGENT_ADMIN_URL}
+              - name: ACAPY__AgentUrl
+                value: ${AGENT_PUBLIC_URL}
+              - name: UrlShortenerService__BaseUrl
+                value: https://${APPLICATION_DOMAIN}/url
+              - name: SwaggerEnabled
+                value: ${SWAGGER_ENABLED}
+              - name: ApiKey
+                valueFrom:
+                  secretKeyRef:
+                    name: ${PREFIX}${NAME}
+                    key: controller-api-key
+              - name: ACAPY__AdminURLApiKey
+                valueFrom:
+                  secretKeyRef:
+                    name: agent-consommateur
+                    key: admin-api-key
+              - name: ASPNETCORE_URLS
+                value: ${ASPNETCORE_URLS}
+            resources:
+              requests:
+                cpu: ${CPU_REQUEST}
+                memory: ${MEMORY_REQUEST}
+              limits:
+                cpu: ${CPU_LIMIT}
+                memory: ${MEMORY_LIMIT}
+            volumeMounts:
+              - name: ${PREFIX}${NAME}-data
+                mountPath: ${MOUNT_PATH}
+        dnsPolicy: ClusterFirst
+        initContainers:
+        - name: init-db
+          image: busybox
+          command: ['sh', '-c']
+          args: ["until nc -z ${POSTGRESQL_NAME}:\"${POSTGRESQL_PORT}\"; do echo waiting for db; sleep 2; done;"]
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: IfNotPresent
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    test: false
+    triggers:
+      - type: ConfigChange
+      - type: ImageChange
+        imageChangeParams:
+          automatic: true
+          containerNames:
+            - ${PREFIX}${NAME}
+          from:
+            kind: ImageStreamTag
+            namespace: ${IMAGE_NAMESPACE}
+            name: ${PREFIX}${NAME}:${TAG_NAME}
+
+- kind: PersistentVolumeClaim
+  apiVersion: v1
+  metadata:
+    name: ${PREFIX}${NAME}
+    labels:
+      name: ${PREFIX}${NAME}
+      app: ${APP_GROUP}
+      app.kubernetes.io/part-of: ${APP_GROUP}
+      app-group: ${APP_GROUP}
+      role: ${PREFIX}${ROLE}
+      env: ${ENV_NAME}
+  spec:
+    storageClassName: ${PERSISTENT_VOLUME_CLASS}
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: ${PERSISTENT_VOLUME_SIZE}
+
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: ${PREFIX}${NAME}
+    labels:
+      name: ${PREFIX}${NAME}
+      app: ${APP_GROUP}
+      app.kubernetes.io/part-of: ${APP_GROUP}
+      app-group: ${APP_GROUP}
+      role: ${PREFIX}${ROLE}
+      env: ${ENV_NAME}
+  spec:
+    ports:
+      - name: ${PREFIX}${NAME}
+        port: 5000
+        protocol: TCP
+        targetPort: 8080
+    selector:
+      name: ${PREFIX}${NAME}
+    sessionAffinity: None
+    type: ClusterIP
+
+- kind: Route
+  apiVersion: v1
+  metadata:
+    name: ${PREFIX}${NAME}
+    labels:
+      name: ${PREFIX}${NAME}
+      app: ${APP_GROUP}
+      app.kubernetes.io/part-of: ${APP_GROUP}
+      app-group: ${APP_GROUP}
+      role: ${PREFIX}${ROLE}
+      env: ${ENV_NAME}
+  spec:
+    host: ${APPLICATION_DOMAIN}
+    port:
+      targetPort: ${PREFIX}${NAME}
+    tls:
+      insecureEdgeTerminationPolicy: Redirect
+      termination: edge
+    to:
+      kind: Service
+      name: ${PREFIX}${NAME}
+      weight: 100
+
+parameters:
+  - description: The name assigned to all of the openshift objects defined in this template. It is also the name of runtime image you want.
+    displayName: Name
+    name: NAME
+    required: true
+    value: controller
+  - name: APP_NAME
+    displayName: App Name
+    description: Used to group components together in the OpenShift console.
+    required: true
+    value: vc-authn-oidc
+  - name: APP_GROUP
+    displayName: App Group
+    description: The name assigned to all of the components in this project.
+    required: true
+    value: vc-authn-oidc
+  - name: PREFIX
+    displayName: Prefix
+    description: A name prefix used for all objects
+    required: false
+    value: ''
+  - name: ENV_NAME
+    displayName: Environment Name
+    description: Environment name. For the build environment this will typically be 'tools'
+    required: true
+    value: dev
+  - name: ROLE
+    displayName: Role
+    description: The role of this service within the application - used for Network Policies
+    required: true
+    value: controller
+  - name: AGENT_ROLE
+    displayName: Agent Role
+    description: The role of the agent service within the application - used for Network Policies
+    required: true
+    value: agent
+  - name: ACAPY_NAME
+    displayName: ACA-Py name
+    description: The name assigned to all ACA-Py objects defined in this template.
+    required: true
+    value: 'acapy-agent'
+  - description: The namespace where to get the above image name
+    displayName: Image Namespace
+    name: IMAGE_NAMESPACE
+    required: true
+    value: ""
+  - name: NAMESPACE_NAME
+    displayName: Namespace Name
+    description: The name of the namespace being deployed to..
+    required: true
+    value: exp-port-e-vc-authn-oidc
+  - description: The TAG name for this environment, e.g., dev, test, prod
+    displayName: Env TAG name
+    name: TAG_NAME
+    value: latest
+  - name: APPLICATION_DOMAIN
+    description: The exposed hostname that will route to the service, e.g., myappname.apps.silver.devops.gov.bc.ca, if left blank a value will be defaulted.
+    displayName: Application Hostname
+    value: ""
+  - name: AGENT_ADMIN_URL
+    displayName: The controller agent admin URL
+    description: The controller agent admin URL
+    required: true
+    value: http://vc-authn-agent:8024
+  - name: AGENT_PUBLIC_URL
+    displayName: The controller agent public URL
+    description: The controller agent public URL
+    required: true
+    value: ""
+  - name: CONTROLLER_CERTIFICATE_FILE_PATH
+    displayName: Certificate File Path
+    description: File path to the RSA certificate.
+    required: true
+    value: /controller-data/secret.rsa
+  - name: ASPNETCORE_URLS
+    displayName: ASP.Net Core URLs
+    description: ASP.Net Core URLs.
+    required: true
+    value: http://*:8080
+  - name: CONTROLLER_API_KEY
+    displayName: Controller API key
+    description: API key for the OIDC controlelr
+    required: true
+    generate: expression
+    from: "[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}"
+  - name: SWAGGER_ENABLED
+    displayName: Swagger Enabled
+    description: Flag controlling wether teh Swagger API interface should be enabled.
+    required: false
+    value: "false"
+  - name: MOUNT_PATH
+    displayName: Mount Path
+    description: The path to mount the persistent volume.
+    required: true
+    value: /controller-data
+
+  - name: POSTGRESQL_NAME
+    displayName: PostgreSQL Database Name
+    description: The name of the PostgreSQL database.
+    required: true
+    value: email-verification-service-db
+  - name: POSTGRESQL_USER
+    displayName: PostgreSQL Connection Username
+    description: Username for PostgreSQL user that will be used for accessing the
+      database.  Needs to be basee64 encoded/
+    required: true
+    generate: expression
+    value: 'dbuser'
+  - name: POSTGRESQL_PASSWORD
+    displayName: PostgreSQL Connection Password
+    description: Password for the PostgreSQL connection user.  Needs to be basee64
+      encoded/
+    required: true
+    generate: expression
+    from: '[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}'
+  - name: POSTGRESQL_ADMIN_PASSWORD
+    displayName: PostgreSQL Admin Password
+    description: Password for the 'postgres' PostgreSQL administrative account.  Needs
+      to be basee64 encoded.
+    required: true
+    generate: expression
+    from: '[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}'
+  - name: POSTGRESQL_VOLUME_SIZE
+    displayName: PostgreSql volume size
+    description: The size of the PostgreSql persistent volume, e.g. 512Mi, 1Gi, 2Gi.
+    required: true
+    value: 1Gi
+  - name: POSTGRESQL_PORT
+    displayName: PostgreSql key management service port
+    required: true
+    description: The port number of the deployed PostgreSql database. Only used when WALLET_STORAGE_TYPE = postgres_storage.
+    value: '5432'
+  - name: POSTGRESQL_IMAGE
+    displayName: Source Image Name
+    required: true
+    description: The name of the source image.
+    value: database
+  - name: POSTGRESQL_TAG
+    displayName: Source Image Tag
+    required: true
+    description: The tag of the source image.
+    value: latest
+
+  - name: PERSISTENT_VOLUME_SIZE
+    displayName: Persistent Volume Size
+    description: The size of the persistent volume , e.g. 512Mi, 1Gi, 2Gi.
+    required: true
+    value: 1Gi
+  - name: PERSISTENT_VOLUME_CLASS
+    displayName: Persistent Volume Class name
+    description: The class of the volume; gluster-file, gluster-block, gluster-file-db, netapp-file-standard, netapp-block-standard
+    required: false
+    value: 'gp2'
+  - name: CPU_REQUEST
+    displayName: Resources CPU Request
+    description: The resources CPU request (in cores) for this build.
+    required: true
+    value: 10m
+  - name: CPU_LIMIT
+    displayName: Resources CPU Limit
+    description: The resources CPU limit (in cores) for this build.
+    required: true
+    value: 500m
+  - name: MEMORY_REQUEST
+    displayName: Resources Memory Request
+    description: The resources Memory request (in Mi, Gi, etc) for this build.
+    required: true
+    value: 128Mi
+  - name: MEMORY_LIMIT
+    displayName: Resources Memory Limit
+    description: The resources Memory limit (in Mi, Gi, etc) for this build.
+    required: true
+    value: 512Mi

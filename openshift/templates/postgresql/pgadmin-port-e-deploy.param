@@ -1,0 +1,16 @@
+#=========================================================
+# OpenShift template parameters for:
+#
+# Component: pgadmin-port-e-deploy-param.yaml
+#
+# Remplacer les valeurs de secret des variables suivantes: 
+# 
+# PGADMIN_DEFAULT_EMAIL, PGADMIN_DEFAULT_PASSWORD
+#
+# Template File: ../openshift/templates/postgresql/pgadmin-port-e-deploy-param.yaml
+#=========================================================
+
+NAME=pgadmin
+SUFFIX=-app
+PGADMIN_DEFAULT_EMAIL=
+PGADMIN_DEFAULT_PASSWORD=

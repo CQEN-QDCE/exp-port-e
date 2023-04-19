@@ -1,0 +1,3 @@
+is_global = true
+build_property.RootNamespace = VCAuthn
+build_property.ProjectDir = /Users/flihp/GitHub/vc-authn-oidc/oidc-controller/src/VCAuthn/

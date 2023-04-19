@@ -1,0 +1,310 @@
+######################################################################
+# oc process -f oidc-angular-deploy.yaml --param-file=oidc-angular-deploy.param | oc apply -f -
+######################################################################
+
+apiVersion: v1
+kind: Template
+metadata:
+  annotations:
+    description: Deployment template for an angular frontend OIDC Client
+    tags: angular
+  name: ${PREFIX}${NAME}-deployment-template
+objects:
+######################################################################
+# OpenID Provider
+# System.ArgumentException: Couldn't set port (Parameter 'port')
+######################################################################
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    name: ${PREFIX}${NAME}
+    labels:
+      name: ${PREFIX}${NAME}
+      app: ${APP_GROUP}
+      app.kubernetes.io/part-of: ${APP_GROUP}
+      app-group: ${APP_GROUP}
+      role: ${PREFIX}${ROLE}
+      env: ${ENV_NAME}
+  spec:
+    replicas: 1
+    selector:
+      app: ${APP_GROUP}
+      app.kubernetes.io/part-of: ${APP_GROUP}
+      name: ${PREFIX}${NAME}
+      role: ${PREFIX}${ROLE}
+      env: ${ENV_NAME}
+    strategy:
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          name: ${PREFIX}${NAME}
+          app: ${APP_GROUP}
+          app.kubernetes.io/part-of: ${APP_GROUP}
+          app-group: ${APP_GROUP}
+          role: ${PREFIX}${ROLE}
+          env: ${ENV_NAME}
+      spec:
+        volumes:
+          - name: ${PREFIX}${NAME}-data
+            persistentVolumeClaim:
+              claimName: ${PREFIX}${NAME}
+        containers:
+          - image: ${PREFIX}${NAME}
+            imagePullPolicy: Always
+            name: ${PREFIX}${NAME}
+            ports:
+              - containerPort: 4200
+                protocol: TCP
+            command:
+              - /bin/sh
+              - -c
+              - exec nginx -g 'daemon off;'
+            resources:
+              requests:
+                cpu: ${CPU_REQUEST}
+                memory: ${MEMORY_REQUEST}
+              limits:
+                cpu: ${CPU_LIMIT}
+                memory: ${MEMORY_LIMIT}
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    test: false
+    triggers:
+      - type: ConfigChange
+      - type: ImageChange
+        imageChangeParams:
+          automatic: true
+          containerNames:
+            - ${PREFIX}${NAME}
+          from:
+            kind: ImageStreamTag
+            namespace: ${IMAGE_NAMESPACE}
+            name: ${PREFIX}${NAME}:${TAG_NAME}
+
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: ${PREFIX}${NAME}
+    labels:
+      name: ${PREFIX}${NAME}
+      app: ${APP_GROUP}
+      app.kubernetes.io/part-of: ${APP_GROUP}
+      app-group: ${APP_GROUP}
+      role: ${PREFIX}${ROLE}
+      env: ${ENV_NAME}
+  spec:
+    ports:
+      - name: ${PREFIX}${NAME}
+        port: 4200
+        protocol: TCP
+        targetPort: 80
+    selector:
+      name: ${PREFIX}${NAME}
+    sessionAffinity: None
+    type: ClusterIP
+
+- kind: Route
+  apiVersion: v1
+  metadata:
+    name: ${PREFIX}${NAME}
+    labels:
+      name: ${PREFIX}${NAME}
+      app: ${APP_GROUP}
+      app.kubernetes.io/part-of: ${APP_GROUP}
+      app-group: ${APP_GROUP}
+      role: ${PREFIX}${ROLE}
+      env: ${ENV_NAME}
+  spec:
+    host: ${APPLICATION_DOMAIN}
+    port:
+      targetPort: ${PREFIX}${NAME}
+    tls:
+      insecureEdgeTerminationPolicy: Redirect
+      termination: edge
+    to:
+      kind: Service
+      name: ${PREFIX}${NAME}
+      weight: 100
+
+parameters:
+  - description: The name assigned to all of the openshift objects defined in this template. It is also the name of runtime image you want.
+    displayName: Name
+    name: NAME
+    required: true
+    value: controller
+  - name: APP_NAME
+    displayName: App Name
+    description: Used to group components together in the OpenShift console.
+    required: true
+    value: vc-authn-oidc
+  - name: APP_GROUP
+    displayName: App Group
+    description: The name assigned to all of the components in this project.
+    required: true
+    value: vc-authn-oidc
+  - name: PREFIX
+    displayName: Prefix
+    description: A name prefix used for all objects
+    required: false
+    value: ''
+  - name: ENV_NAME
+    displayName: Environment Name
+    description: Environment name. For the build environment this will typically be 'tools'
+    required: true
+    value: dev
+  - name: ROLE
+    displayName: Role
+    description: The role of this service within the application - used for Network Policies
+    required: true
+    value: controller
+  - name: AGENT_ROLE
+    displayName: Agent Role
+    description: The role of the agent service within the application - used for Network Policies
+    required: true
+    value: agent
+  - name: ACAPY_NAME
+    displayName: ACA-Py name
+    description: The name assigned to all ACA-Py objects defined in this template.
+    required: true
+    value: 'acapy-agent'
+  - description: The namespace where to get the above image name
+    displayName: Image Namespace
+    name: IMAGE_NAMESPACE
+    required: true
+    value: ""
+  - name: NAMESPACE_NAME
+    displayName: Namespace Name
+    description: The name of the namespace being deployed to..
+    required: true
+    value: exp-port-e-vc-authn-oidc
+  - description: The TAG name for this environment, e.g., dev, test, prod
+    displayName: Env TAG name
+    name: TAG_NAME
+    value: latest
+  - name: APPLICATION_DOMAIN
+    description: The exposed hostname that will route to the service, e.g., myappname.apps.silver.devops.gov.bc.ca, if left blank a value will be defaulted.
+    displayName: Application Hostname
+    value: ""
+  - name: AGENT_ADMIN_URL
+    displayName: The controller agent admin URL
+    description: The controller agent admin URL
+    required: true
+    value: http://vc-authn-agent:8024
+  - name: AGENT_PUBLIC_URL
+    displayName: The controller agent public URL
+    description: The controller agent public URL
+    required: true
+    value: ""
+  - name: CONTROLLER_CERTIFICATE_FILE_PATH
+    displayName: Certificate File Path
+    description: File path to the RSA certificate.
+    required: true
+    value: /controller-data/secret.rsa
+  - name: ASPNETCORE_URLS
+    displayName: ASP.Net Core URLs
+    description: ASP.Net Core URLs.
+    required: true
+    value: http://*:8080
+  - name: CONTROLLER_API_KEY
+    displayName: Controller API key
+    description: API key for the OIDC controlelr
+    required: true
+    generate: expression
+    from: "[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}"
+  - name: SWAGGER_ENABLED
+    displayName: Swagger Enabled
+    description: Flag controlling wether teh Swagger API interface should be enabled.
+    required: false
+    value: "false"
+  - name: MOUNT_PATH
+    displayName: Mount Path
+    description: The path to mount the persistent volume.
+    required: true
+    value: /controller-data
+
+  - name: POSTGRESQL_NAME
+    displayName: PostgreSQL Database Name
+    description: The name of the PostgreSQL database.
+    required: true
+    value: email-verification-service-db
+  - name: POSTGRESQL_USER
+    displayName: PostgreSQL Connection Username
+    description: Username for PostgreSQL user that will be used for accessing the
+      database.  Needs to be basee64 encoded/
+    required: true
+    generate: expression
+    value: 'dbuser'
+  - name: POSTGRESQL_PASSWORD
+    displayName: PostgreSQL Connection Password
+    description: Password for the PostgreSQL connection user.  Needs to be basee64
+      encoded/
+    required: true
+    generate: expression
+    from: '[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}'
+  - name: POSTGRESQL_ADMIN_PASSWORD
+    displayName: PostgreSQL Admin Password
+    description: Password for the 'postgres' PostgreSQL administrative account.  Needs
+      to be basee64 encoded.
+    required: true
+    generate: expression
+    from: '[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}'
+  - name: POSTGRESQL_VOLUME_SIZE
+    displayName: PostgreSql volume size
+    description: The size of the PostgreSql persistent volume, e.g. 512Mi, 1Gi, 2Gi.
+    required: true
+    value: 1Gi
+  - name: POSTGRESQL_PORT
+    displayName: PostgreSql key management service port
+    required: true
+    description: The port number of the deployed PostgreSql database. Only used when WALLET_STORAGE_TYPE = postgres_storage.
+    value: '5432'
+  - name: POSTGRESQL_IMAGE
+    displayName: Source Image Name
+    required: true
+    description: The name of the source image.
+    value: database
+  - name: POSTGRESQL_TAG
+    displayName: Source Image Tag
+    required: true
+    description: The tag of the source image.
+    value: latest
+
+  - name: PERSISTENT_VOLUME_SIZE
+    displayName: Persistent Volume Size
+    description: The size of the persistent volume , e.g. 512Mi, 1Gi, 2Gi.
+    required: true
+    value: 1Gi
+  - name: PERSISTENT_VOLUME_CLASS
+    displayName: Persistent Volume Class name
+    description: The class of the volume; gluster-file, gluster-block, gluster-file-db, netapp-file-standard, netapp-block-standard
+    required: false
+    value: 'gp2'
+  - name: CPU_REQUEST
+    displayName: Resources CPU Request
+    description: The resources CPU request (in cores) for this build.
+    required: true
+    value: 10m
+  - name: CPU_LIMIT
+    displayName: Resources CPU Limit
+    description: The resources CPU limit (in cores) for this build.
+    required: true
+    value: 500m
+  - name: MEMORY_REQUEST
+    displayName: Resources Memory Request
+    description: The resources Memory request (in Mi, Gi, etc) for this build.
+    required: true
+    value: 128Mi
+  - name: MEMORY_LIMIT
+    displayName: Resources Memory Limit
+    description: The resources Memory limit (in Mi, Gi, etc) for this build.
+    required: true
+    value: 512Mi

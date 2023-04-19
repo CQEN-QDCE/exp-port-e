@@ -1,0 +1,17 @@
+# Arquivos ligados ao docker
+Dockerfile
+docker.env
+.dockerignore
+
+# Arquivos ligados ao node e npm
+node_modules
+dist
+npm-debug.logs
+
+# Arquivos da base de dados
+data
+
+# Outros arquivos
+.git
+.env
+.DS_Store
