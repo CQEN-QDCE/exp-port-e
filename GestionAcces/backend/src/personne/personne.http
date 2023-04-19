@@ -1,0 +1,67 @@
+#/*
+#* Copyright (c) 2022 Gouvernement du Québec
+#* Auteur: Julio Cesar Torres 
+#* SPDX-License-Identifier: LiLiQ-R-v.1.1
+#* License-Filename: /LICENSE
+#*/
+##############################################################
+# Requetes http backend NestJs
+##############################################################
+# Avant usage, il faut renseigner les champs X-API-Key des 
+# endpoints qui seront utilisés. 
+# 
+### Définition des variables globales 
+@hostname = http://localhost:3000
+
+
+# ============================================================================
+#    Entity: personne
+#    Endpoint: /personne
+# ============================================================================
+
+####
+#### Selects all personne 
+#### 
+GET {{hostname}}/personne HTTP/1.1
+X-API-Key: 
+Content-Type: application/json
+
+
+####
+#### Create a new personne 
+#### 
+POST {{hostname}}/personne HTTP/1.1
+X-API-Key: 
+Content-Type: application/json
+
+[
+    {  
+		"nom" : "Piché", 
+		"prenom" : "Daniel", 
+		"direction": "Direction de l'Innovation", 
+		"poste" : "Directeur" 
+    }
+]
+
+
+####
+#### Create a new batch of personne 
+#### 
+POST {{hostname}}/personne HTTP/1.1
+X-API-Key: 
+Content-Type: application/json
+
+[
+    {  
+		"nom" : "", 
+		"prenom" : "", 
+		"direction": "", 
+		"poste" : "" 
+    }, 
+    {  
+		"nom" : "", 
+		"prenom" : "", 
+		"direction": "", 
+		"poste" : "" 
+    }  
+]

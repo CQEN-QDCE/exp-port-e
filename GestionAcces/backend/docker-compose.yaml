@@ -1,0 +1,53 @@
+version : "3.1"
+services: 
+  db:
+    container_name: ${APP}-postgresdb-${SUFFIX}
+    image: postgres:15.1
+    ports:
+      - 45432:5432
+    networks:
+      - ${NETWORK}
+    volumes:
+      - ./data/postgres-data:/data/postgres
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=porte
+ 
+  pgadmin:
+    container_name: ${APP}-pgadmin-${SUFFIX}
+    image: dpage/pgadmin4:6.18
+    networks:
+      - ${NETWORK}
+    ports:
+      - 48080:80
+    volumes:
+      - ./data/pgadmin:/root/.pgadmin
+    env_file:
+      - .env
+    depends_on:
+      - db
+
+  api:
+    container_name: ${APP}-nestjs-api-${SUFFIX}
+    image: port-e-nestjs-backend
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment:
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=porte
+      - MODE=DEV
+    ports:
+      - 43000:3000
+    networks: 
+      - ${NETWORK}
+    restart: unless-stopped
+    depends_on: 
+      - db
+
+networks:
+  nestjs-network:
