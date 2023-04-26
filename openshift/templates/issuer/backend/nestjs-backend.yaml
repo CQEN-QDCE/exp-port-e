@@ -16,6 +16,9 @@ objects:
   apiVersion: v1
   metadata:
     name: ${POSTGRESQL_NAME}
+    labels:
+      app: ${POSTGRESQL_NAME}
+      app.kubernetes.io/part-of: ${APP_GROUP}
   spec:
     storageClassName: ${STORAGE_CLASS_NAME}
     accessModes:
@@ -35,6 +38,9 @@ objects:
       template.openshift.io/expose-database-admin-password: "{.data['database-admin-password']}"
       template.openshift.io/expose-database-name: "{.data['database-name']}"
       template.openshift.io/expose-admin-api-key: "{.data['admin-api-key']}"
+    labels:
+      app: ${POSTGRESQL_NAME}
+      app.kubernetes.io/part-of: ${APP_GROUP}
   stringData:
     database-user: "${POSTGRESQL_USERNAME}"
     database-password: "${POSTGRESQL_PASSWORD}"
@@ -50,7 +56,7 @@ objects:
       template.alpha.openshift.io/wait-for-ready: 'true'
     labels:
       app: ${POSTGRESQL_NAME}
-      app.kubernetes.io/part-of: exp-port-e-backend
+      app.kubernetes.io/part-of: ${APP_GROUP}
       app.kubernetes.io/runtime: postgresql
       app.kubernetes.io/name: postgresql
   spec:
@@ -127,6 +133,9 @@ objects:
   apiVersion: v1
   metadata:
     name: ${POSTGRESQL_NAME}
+    labels:
+      app: ${POSTGRESQL_NAME}
+      app.kubernetes.io/part-of: ${APP_GROUP}
   spec:
     ports:
     - name: ${POSTGRESQL_NAME}
@@ -150,7 +159,7 @@ objects:
     name: ${NESTJS_NAME}
     labels:
       app: ${NESTJS_NAME}
-      app.kubernetes.io/part-of: exp-port-e-backend
+      app.kubernetes.io/part-of: ${APP_GROUP}
 
 - kind: BuildConfig
   apiVersion: v1
@@ -160,7 +169,7 @@ objects:
       template.alpha.openshift.io/wait-for-ready: "true"
     labels:
       app: ${NESTJS_NAME}
-      app.kubernetes.io/part-of: exp-port-e-backend
+      app.kubernetes.io/part-of: ${APP_GROUP}
     name: ${NESTJS_NAME}
   spec:
     output:
@@ -186,7 +195,7 @@ objects:
     name: ${NESTJS_NAME}
     labels:
       app: ${NESTJS_NAME}
-      app.kubernetes.io/part-of: exp-port-e-backend
+      app.kubernetes.io/part-of: ${APP_GROUP}
       app.kubernetes.io/runtime: nodejs
       app.kubernetes.io/name: nodejs
     annotations:
@@ -286,7 +295,7 @@ objects:
     name: ${NESTJS_NAME}
     labels:
       app: ${NESTJS_NAME}
-      app.kubernetes.io/part-of: exp-port-e-backend
+      app.kubernetes.io/part-of: ${APP_GROUP}
   spec:
     selector:
       app: ${NESTJS_NAME}
@@ -302,7 +311,7 @@ objects:
     name: ${APP_NAME}
     labels:
       app: ${NESTJS_NAME}
-      app.kubernetes.io/part-of: exp-port-e-backend
+      app.kubernetes.io/part-of: ${APP_GROUP}
   spec:
     host: ${APP_SUBDOMAIN}.${APP_DOMAIN}
     to:
@@ -334,6 +343,11 @@ parameters:
   description: Used to group components together in the OpenShift console.
   required: true
   value: "exp-port-e-backend"
+- name: APP_GROUP
+  displayName: App Group
+  description: The name assigned to all of the deployments in this project.
+  required: true
+  value: backend-service
 - name: APP_DOMAIN
   description: The external hostname to access the application.
   required: true
