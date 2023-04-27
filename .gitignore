@@ -12,3 +12,5 @@ constants.ts
 docker.env
 
 backup*.sql*
+
+node_modules
