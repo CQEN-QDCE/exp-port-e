@@ -39,7 +39,7 @@ COPY --chown=node:node --from=development /usr/src/app/node_modules ./node_modul
 COPY --chown=node:node . . 
 
 # Exécutez la commande build qui crée le bundle de production
-RUN npm run build
+# RUN npm run build
 
 # Définir la variable d'environnement NODE_ENV
 ENV NODE_ENV production
