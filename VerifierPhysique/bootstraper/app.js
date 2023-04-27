@@ -4,7 +4,6 @@
 * SPDX-License-Identifier: LiLiQ-R-v.1.1
 * License-Filename: /LICENSE
 */
-
 // Configurer dotenv
 const dotenv = require('dotenv');
 dotenv.config();
@@ -16,7 +15,6 @@ const ENDPOINT_CONNECTION = process.env.ENDPOINT_CONNECTION;
 const X_API_KEY           = process.env.X_API_KEY;
 const APP_PORT            = process.env.APP_PORT;
 
-
 // Configurer axios 
 const axios = require("axios");
 axios.defaults.baseURL = BASE_URL;
@@ -26,24 +24,25 @@ const config = {
   }
 };
 
-// Configurer l'express 
+// Configurer expressjs
 const express = require('express')
 const app = express();
 const port = APP_PORT;
 
-// Servir fichier statiques 
+// servir fichier statiques 
 app.use('/static', express.static('public'));
 
 // Routing de l'application express 
+
 app.get('/', (req, res) => {
-  res.send('');
+  res.send(' ');
 })
 
-/*app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
-})*/
+app.listen(port, () => {
+  console.log(`Application de bootstrap écoute en porte ${port}`);
+})
 
-app.get('/getConnexion', async (req, res) => {
+app.get('/getConnection', async (req, res) => {
 
   let connectionData = await createConnection(); 
   console.log("RETOUR: ", connectionData);
@@ -72,7 +71,7 @@ async function createConnection(){
       return {
           "connection_id": response.data.connection_id,
           "invitation_url": response.data.invitation_url 
-      }
+        }
   } catch (error) {
     if(error.response){ 
         console.log(error.response.statusText);
@@ -115,5 +114,4 @@ async function registrerShortURL(connectionData){
     console.log(error);
   }
 }
-
 
