@@ -1,0 +1,14 @@
+#===============================================================================
+# Params pour le template port-e-invitant.yaml
+#
+# Remplacer les valeurs de secret des variables suivantes: 
+# 
+# AGENT_API_KEY
+#
+#===============================================================================
+APP_NAME=invitant
+APP_DOMAIN=apps.exp.openshift.cqen.ca
+APP_SUBDOMAIN=exp-port-e-invitant
+GIT_REF=features/url-courte
+CONTEXT_SOURCE_DIR=VerifierPhysique
+AGENT_API_KEY=
