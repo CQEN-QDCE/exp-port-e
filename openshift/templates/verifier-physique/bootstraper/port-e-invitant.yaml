@@ -1,0 +1,313 @@
+
+
+
+# ne pas commiter to github
+
+
+
+
+
+######################################################################
+# oc process -f ./port-e-invitant.yaml --param-file=./port-e-invitant.param.env | oc apply -f -
+######################################################################
+kind: Template
+apiVersion: template.openshift.io/v1
+metadata:
+  name: ${APP_NAME}
+  annotations:
+    description: 
+    tags: CQEN, SQIN, ING, Hyperledger, ARIES, Indy
+objects:
+######################################################################
+# NestJS Invitant
+######################################################################
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
+    name: ${INVITANT_NAME}
+    labels:
+      app: ${INVITANT_NAME}
+      app.kubernetes.io/part-of: ${APP_NAME}
+
+- kind: BuildConfig
+  apiVersion: v1
+  metadata:
+    annotations:
+      app.openshift.io/vcs-uri: ${GITHUB_REPOSITORY_URI}
+      template.alpha.openshift.io/wait-for-ready: "true"
+    labels:
+      app: ${INVITANT_NAME}
+      app.kubernetes.io/part-of: ${APP_NAME}
+    name: ${INVITANT_NAME}
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: ${INVITANT_NAME}:latest
+    source:
+      contextDir: ${CONTEXT_SOURCE_DIR}
+      git:
+        uri: ${GITHUB_REPOSITORY_URI}
+        ref: ${GIT_REF}
+      type: Git
+    strategy:
+      dockerStrategy:
+        dockerfilePath: Dockerfile
+      type: Docker
+    triggers:
+      - type: ConfigChange
+
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    name: ${INVITANT_NAME}
+    labels:
+      app: ${INVITANT_NAME}
+      app.kubernetes.io/part-of: ${APP_NAME}
+      app.kubernetes.io/runtime: nodejs
+      app.kubernetes.io/name: nodejs
+    annotations:
+      description: Defines how to deploy the application server
+      app.openshift.io/connects-to: >-
+        [{"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${POSTGRESQL_NAME}"},
+        {"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${CONTROLLER_NAME}"},
+        {"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${AGENT_NAME}"}]
+  spec:
+    strategy:
+      type: Rolling
+      rollingParams:
+        updatePeriodSeconds: 1
+        intervalSeconds: 1
+        timeoutSeconds: 600
+        maxUnavailable: 25%
+        maxSurge: 25%
+      resources: {}
+      activeDeadlineSeconds: 21600
+    triggers:
+      - type: ConfigChange
+      - type: ImageChange
+        imageChangeParams:
+          automatic: true
+          containerNames:
+            - ${INVITANT_NAME}
+          from:
+            kind: ImageStreamTag
+            name: "${INVITANT_NAME}:latest"
+    replicas: 1
+    revisionHistoryLimit: 10
+    test: false
+    selector:
+      app: ${INVITANT_NAME}
+    template:
+      metadata:
+        labels:
+          app: ${INVITANT_NAME}
+      spec:
+        containers:
+        # env-file: .env
+        - env:
+          - name: MODE
+            value: DEV
+          - name: BASE_URL
+            valueFrom:
+              secretKeyRef:
+                name: ${APP_NAME}-invite
+                key: base-url
+          - name: BASE_SHORT_URL
+            valueFrom:
+              secretKeyRef:
+                name: ${APP_NAME}-invite
+                key: base-short-url
+          - name: ENDPOINT_CONNECTION
+            valueFrom:
+              secretKeyRef:
+                name: ${APP_NAME}-invite
+                key: endpoint-connection
+          - name: ENDPOINT_INVITATION
+            valueFrom:
+              secretKeyRef:
+                name: ${APP_NAME}-invite
+                key: endpoint-invitation
+          - name: X_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: ${APP_NAME}-invite
+                key: x-api-key
+          - name: APP_PORT
+            valueFrom:
+              secretKeyRef:
+                name: ${APP_NAME}-invite
+                key: app-port
+          - name: WEBHOOK_URL
+            value: ${WEBHOOK_URL}
+          - name: AGENT_URL
+            value: ${AGENT_URL}
+          - name: AGENT_API_KEY
+            value: ${AGENT_API_KEY}
+          - name: RUN_MIGRATIONS
+            value: "false"
+          name: ${INVITANT_NAME}
+          image: " "
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: Always
+        #initContainers:
+        #- name: init-db
+        #  image: busybox
+        #  command: ['sh', '-c', 'until nc -z ${POSTGRESQL_NAME}:${POSTGRESQL_PORT}; do echo waiting for db; sleep 2; done;']
+        restartPolicy: Always
+        terminationGracePeriodSeconds: 30
+        dnsPolicy: ClusterFirst
+        securityContext: {}
+        schedulerName: default-scheduler
+
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: ${INVITANT_NAME}
+    labels:
+      app: ${INVITANT_NAME}
+      app.kubernetes.io/part-of: ${APP_NAME}
+  spec:
+    selector:
+      app: ${INVITANT_NAME}
+    ports:
+      - name: "3000"
+        protocol: TCP
+        port: 3000
+        targetPort: 3000
+
+- kind: Route
+  apiVersion: v1
+  metadata:
+    name: ${APP_NAME}
+    labels:
+      app: ${INVITANT_NAME}
+      app.kubernetes.io/part-of: ${APP_NAME}
+  spec:
+    host: ${APP_SUBDOMAIN}.${APP_DOMAIN}
+    to:
+      kind: Service
+      name: ${INVITANT_NAME}
+      weight: 100
+    port:
+      targetPort: 3000
+    tls:
+      termination: edge
+      insecureEdgeTerminationPolicy: None
+    wildcardPolicy: None
+  status:
+    ingress:
+      - host: ${APP_SUBDOMAIN}.${APP_DOMAIN}
+        routerName: default
+        conditions:
+          - type: Admitted
+            status: "True"
+        wildcardPolicy: None
+        routerCanonicalHostname: ${APP_DOMAIN}
+
+######################################################################
+# Secrets
+######################################################################
+- kind: Secret
+  apiVersion: v1
+  metadata:
+    name: ${APP_NAME}-invite
+    labels:
+      name: ${APP_NAME}
+      role: controller
+  stringData:
+    base-url:             ${BASE_URL}
+    base-short-url:       ${BASE_SHORT_URL}
+    endpoint-connection:  ${ENDPOINT_CONNECTION} 
+    endpoint-invitation:  ${ENDPOINT_INVITATION} 
+    x-api-key:            ${X_API_KEY}           
+    app-port:             ${APP_PORT}
+  type: Opaque
+
+######################################################################
+# Parameters
+######################################################################
+parameters:
+- name: APP_NAME
+  displayName: Application name
+  description: Used to group components together in the OpenShift console.
+  required: true
+  value: "bootstrap"
+- name: APP_DOMAIN
+  description: The external hostname to access the application.
+  required: true
+- name: APP_SUBDOMAIN
+  description: The external subdomain to access the application.
+  required: true
+  value: "exp-port-e-invitant"
+
+- name: INVITANT_NAME
+  displayName: Invitant name
+  description: The name assigned to all objects defined in this template.
+  required: true
+  value: "port-e-invitant"
+- name: GITHUB_REPOSITORY_URI
+  displayName: GitHub repository URI
+  description: URI of the GitHub repository.
+  required: true
+  value: "https://github.com/CQEN-QDCE/exp-port-e.git"
+- name: CONTEXT_SOURCE_DIR
+  displayName: Context source dir
+  description: Répertoire ou sont les elements pour le build.
+  required: true
+  value: "VerifierPhysique/bootstraper"
+- name: GIT_REF
+  displayName: Git reference
+  description: Dénomination de la branche que sera utilisée pour le build.
+  required: true
+  value: "features/url-courte"
+
+- name: WEBHOOK_URL
+  displayName: Webhook url
+  description: Url pour les webhooks
+  required: false
+- name: AGENT_URL
+  displayName: Agent URL
+  description: Url de l'agent émetteur
+  required: false
+- name: AGENT_API_KEY
+  displayName: Agent API key
+  description: Agent API key.
+  required: false
+- name: AGENT_NAME
+  displayName: Agent Name
+  required: true
+  value: agent
+- name: CONTROLLER_NAME
+  displayName: Controller Name
+  required: true
+  value: controller
+
+- name: BASE_URL
+  displayName: URL de base de l'application
+  required: true
+  value: https://exp-port-e-consommateur-agent-admin.apps.exp.openshift.cqen.ca
+- name: BASE_SHORT_URL
+  displayName: URL vers l'app de raccourcicemment d'URL
+  required: true
+  value: https://exp-port-e-raccourci.apps.exp.openshift.cqen.ca/
+- name: ENDPOINT_CONNECTION
+  displayName: Endpoint for the connection retrieval 
+  required: true
+  value: /connections/create-invitation
+- name: ENDPOINT_INVITATION
+  displayName: Endpoint for the connection retrieval 
+  required: true
+  value: /present-proof/send-request
+- name: X_API_KEY
+  displayName: The key to the access to the ACA-Py API 
+  required: true
+- name: APP_PORT
+  displayName: Port that the app answers to 
+  required: true
+  value: "3000"
