@@ -427,8 +427,8 @@ objects:
       template.openshift.io/expose-database-connectionstring: "{.data['database-connectionstring']}"
   stringData:
     database-hostname: ${POSTGRESQL_NAME}
-    database-name: ${POSTGRESQL_DATABASE_NAME}
     database-port: ${POSTGRESQL_PORT}
+    database-name: ${POSTGRESQL_DATABASE_NAME}
     database-user: ${POSTGRESQL_USER}
     database-password: ${POSTGRESQL_PASSWORD}
     database-admin-user: "postgres"
