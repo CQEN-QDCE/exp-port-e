@@ -168,33 +168,50 @@ objects:
         targetPort: 3000
 
 - kind: Route
-  apiVersion: v1
+  apiVersion: route.openshift.io/v1
   metadata:
-    name: ${APP_NAME}
-    labels:
-      app: ${INVITANT_NAME}
-      app.kubernetes.io/part-of: ${APP_NAME}
+      name: invitant
+      namespace: exp-port-e-1-flihp
   spec:
-    host: ${APP_SUBDOMAIN}.${APP_DOMAIN}
-    to:
-      kind: Service
-      name: ${INVITANT_NAME}
-      weight: 100
-    port:
-      targetPort: 4000
-    tls:
-      termination: edge
-      insecureEdgeTerminationPolicy: None
-    wildcardPolicy: None
-  status:
-    ingress:
-      - host: ${APP_SUBDOMAIN}.${APP_DOMAIN}
-        routerName: default
-        conditions:
-          - type: Admitted
-            status: "True"
-        wildcardPolicy: None
-        routerCanonicalHostname: ${APP_DOMAIN}
+      host: ${APP_SUBDOMAIN}.${APP_DOMAIN}
+      port:
+        targetPort: 3000
+      tls:
+        insecureEdgeTerminationPolicy: Redirect
+        termination: edge
+      to:
+        kind: Service
+        name: port-e-invitant
+
+
+#- kind: Route
+#   apiVersion: v1
+#  metadata:
+#    name: ${APP_NAME}
+#    labels:
+#      app: ${INVITANT_NAME}
+#      app.kubernetes.io/part-of: ${APP_NAME}
+#  spec:
+#    host: ${APP_SUBDOMAIN}.${APP_DOMAIN}
+#    to:
+#      kind: Service
+#      name: ${INVITANT_NAME}
+#    #  weight: 100
+#    port:
+#      targetPort: 4000
+#    tls:
+#      termination: edge
+#      insecureEdgeTerminationPolicy: None
+#    wildcardPolicy: None
+  #status:
+  #  ingress:
+  #    - host: ${APP_SUBDOMAIN}.${APP_DOMAIN}
+  #      routerName: default
+  #      conditions:
+  #        - type: Admitted
+  #          status: "True"
+  #      wildcardPolicy: None
+  #      routerCanonicalHostname: ${APP_DOMAIN}
 
 ######################################################################
 # Secrets

@@ -233,12 +233,6 @@ objects:
             value: DEV
           - name: PORT
             value: "3000"
-          - name: WEBHOOK_URL
-            value: ${WEBHOOK_URL}
-          - name: AGENT_URL
-            value: ${AGENT_URL}
-          - name: AGENT_API_KEY
-            value: ${AGENT_API_KEY}
           - name: POSTGRES_DATABASE
             valueFrom:
               secretKeyRef:
@@ -309,22 +303,22 @@ objects:
     to:
       kind: Service
       name: ${NESTJS_NAME}
-      weight: 100
+    #  weight: 101
     port:
       targetPort: 3000
     tls:
       termination: edge
       insecureEdgeTerminationPolicy: None
     wildcardPolicy: None
-  status:
-    ingress:
-      - host: ${APP_SUBDOMAIN}.${APP_DOMAIN}
-        routerName: default
-        conditions:
-          - type: Admitted
-            status: "True"
-        wildcardPolicy: None
-        routerCanonicalHostname: ${APP_DOMAIN}
+  #status:
+  #  ingress:
+  #    - host: ${APP_SUBDOMAIN}.${APP_DOMAIN}
+  #      routerName: default
+  #      conditions:
+  #        - type: Admitted
+  #          status: "True"
+  #      wildcardPolicy: None
+  #      routerCanonicalHostname: ${APP_DOMAIN}
 
 ######################################################################
 # Parameters
