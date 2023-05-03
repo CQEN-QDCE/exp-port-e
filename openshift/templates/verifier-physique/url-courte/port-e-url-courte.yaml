@@ -50,7 +50,7 @@ objects:
       template.alpha.openshift.io/wait-for-ready: 'true'
     labels:
       app: ${POSTGRESQL_NAME}
-      app.kubernetes.io/part-of: exp-port-e-url-courte
+      app.kubernetes.io/part-of: ${APP_NAME}
       app.kubernetes.io/runtime: postgresql
       app.kubernetes.io/name: postgresql
   spec:
@@ -151,7 +151,7 @@ objects:
     name: ${NESTJS_NAME}
     labels:
       app: ${NESTJS_NAME}
-      app.kubernetes.io/part-of: exp-port-e-url-courte
+      app.kubernetes.io/part-of: ${APP_NAME}
 
 - kind: BuildConfig
   apiVersion: v1
@@ -161,7 +161,7 @@ objects:
       template.alpha.openshift.io/wait-for-ready: "true"
     labels:
       app: ${NESTJS_NAME}
-      app.kubernetes.io/part-of: exp-port-e-url-courte
+      app.kubernetes.io/part-of: ${APP_NAME}
     name: ${NESTJS_NAME}
   spec:
     output:
@@ -187,7 +187,7 @@ objects:
     name: ${NESTJS_NAME}
     labels:
       app: ${NESTJS_NAME}
-      app.kubernetes.io/part-of: exp-port-e-url-courte
+      app.kubernetes.io/part-of: ${APP_NAME}
       app.kubernetes.io/runtime: nodejs
       app.kubernetes.io/name: nodejs
     annotations:
@@ -287,7 +287,7 @@ objects:
     name: ${NESTJS_NAME}
     labels:
       app: ${NESTJS_NAME}
-      app.kubernetes.io/part-of: exp-port-e-url-courte
+      app.kubernetes.io/part-of: ${APP_NAME}
   spec:
     selector:
       app: ${NESTJS_NAME}
@@ -303,7 +303,7 @@ objects:
     name: ${APP_NAME}
     labels:
       app: ${NESTJS_NAME}
-      app.kubernetes.io/part-of: exp-port-e-url-courte
+      app.kubernetes.io/part-of: ${APP_NAME}
   spec:
     host: ${APP_SUBDOMAIN}.${APP_DOMAIN}
     to:
@@ -334,7 +334,6 @@ parameters:
   displayName: Application name
   description: Used to group components together in the OpenShift console.
   required: true
-  value: "exp-port-e-url-courte"
 - name: APP_DOMAIN
   description: The external hostname to access the application.
   required: true
