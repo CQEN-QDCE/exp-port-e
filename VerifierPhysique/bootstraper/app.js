@@ -66,7 +66,6 @@ async function createConnection(){
   try{
       console.log("BASE_URL", BASE_URL); 
       console.log("ENDPOINT_CONNECTION: ", ENDPOINT_CONNECTION);
-      console.log("config: ", config);
       const response = await axios.post(`${ENDPOINT_CONNECTION}`,{}, config);
       return {
           "connection_id": response.data.connection_id,
