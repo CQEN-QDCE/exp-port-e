@@ -1,12 +1,3 @@
-
-
-
-# ne pas commiter to github
-
-
-
-
-
 ######################################################################
 # oc process -f ./port-e-invitant.yaml --param-file=./port-e-invitant.param.env | oc apply -f -
 ######################################################################
@@ -69,7 +60,6 @@ objects:
     annotations:
       description: Defines how to deploy the application server
       app.openshift.io/connects-to: >-
-        [{"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${POSTGRESQL_NAME}"},
         {"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${CONTROLLER_NAME}"},
         {"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${AGENT_NAME}"}]
   spec:
@@ -155,10 +145,6 @@ objects:
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           imagePullPolicy: Always
-        #initContainers:
-        #- name: init-db
-        #  image: busybox
-        #  command: ['sh', '-c', 'until nc -z ${POSTGRESQL_NAME}:${POSTGRESQL_PORT}; do echo waiting for db; sleep 2; done;']
         restartPolicy: Always
         terminationGracePeriodSeconds: 30
         dnsPolicy: ClusterFirst
@@ -195,7 +181,7 @@ objects:
       name: ${INVITANT_NAME}
       weight: 100
     port:
-      targetPort: 3000
+      targetPort: 4000
     tls:
       termination: edge
       insecureEdgeTerminationPolicy: None
@@ -282,20 +268,18 @@ parameters:
 - name: AGENT_NAME
   displayName: Agent Name
   required: true
-  value: agent
+  value: agent-consommateur
 - name: CONTROLLER_NAME
   displayName: Controller Name
   required: true
-  value: controller
+  value: raccourci-js
 
 - name: BASE_URL
   displayName: URL de base de l'application
   required: true
-  value: https://exp-port-e-consommateur-agent-admin.apps.exp.openshift.cqen.ca
 - name: BASE_SHORT_URL
   displayName: URL vers l'app de raccourcicemment d'URL
   required: true
-  value: https://exp-port-e-raccourci.apps.exp.openshift.cqen.ca/
 - name: ENDPOINT_CONNECTION
   displayName: Endpoint for the connection retrieval 
   required: true
