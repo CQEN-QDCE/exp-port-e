@@ -407,4 +407,4 @@ parameters:
   displayName: Git reference
   description: Dénomination de la branche que sera utilisée pour le build.
   required: true
-  value: "dev"
+  value: "prod"
