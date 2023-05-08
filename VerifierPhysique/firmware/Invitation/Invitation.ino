@@ -9,6 +9,7 @@
 // ----------------------------
 // Standard Libraries
 // ----------------------------
+#include "Invitation.h"
 
 //  Wifi Libs
 #include <ESP8266WiFi.h>
@@ -226,6 +227,9 @@ String requeteHttp(){
     return address;
 }
 
+/**
+ * 
+ */
 void emulerNfc(String adresse){
 
   // NFC 
