@@ -254,21 +254,22 @@ parameters:
   description: The name assigned to all objects defined in this template.
   required: true
   value: "port-e-invitant"
+
 - name: GITHUB_REPOSITORY_URI
   displayName: GitHub repository URI
   description: URI of the GitHub repository.
   required: true
-  value: "https://github.com/CQEN-QDCE/exp-port-e.git"
+  value: https://github.com/CQEN-QDCE/exp-port-e.git
 - name: CONTEXT_SOURCE_DIR
   displayName: Context source dir
-  description: Répertoire ou sont les elements pour le build.
-  required: true
-  value: "VerifierPhysique/bootstraper"
+  description: Répertoire ou sont les elements pour le build (notamment Dockerfile).
+  required: false
+  value: VerifierPhysique/bootstraper
 - name: GIT_REF
   displayName: Git reference
   description: Dénomination de la branche que sera utilisée pour le build.
   required: true
-  value: "features/url-courte"
+  value: features/url-courte
 
 - name: WEBHOOK_URL
   displayName: Webhook url
