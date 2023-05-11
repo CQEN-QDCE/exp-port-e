@@ -22,11 +22,7 @@
     <img src="./assets/images/NodeMCUPinout.jpg" alt="Pinout du module NodeMCU" width="600"/>
 </div>
 
-
 PN532 - module lecture / broadcast de NFC
-
-
-
 
 ## SPI Protocol 
 
@@ -45,6 +41,19 @@ SS: Slave select
 IRQ: Interrupt Signal pin 
 
 RSTO: Reset pin
+
+**Pinnout NodeMCU et Arduino**
+
+|PIN  |Arduino|NodeMCU|
+|-----|-------|-------|
+|SCK  |D13    |D5     |
+|MISO |D12    |D6     |
+|MOSI |D11    |D7     |
+|SS   |D10    |D8     |
+|VCC  |5V     |3.3V   |
+|GND  |GND    |GND    |
+|IRQ  |N/C    |N/C    |
+|RSTO |D9     |N/C    |
 
 ## Datasheets 
 
