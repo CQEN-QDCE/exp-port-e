@@ -44,7 +44,7 @@ WiFiClientSecure client;
 int etatAdresse;
 
 // Objets de la librairie PN532
-PN532_SPI pn532spi(SPI, 10);
+PN532_SPI pn532spi(SPI, SPI_SS_PIN);
 EmulateTag nfc(pn532spi);
 
 // Objets de la librairie NDEF

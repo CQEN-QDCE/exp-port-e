@@ -6,6 +6,9 @@
  * License-Filename: /LICENSE
  */
 
+#define SPI_SS_PIN        10
+
+
 // ----------------------------
 // Configurations de connexion au site 
 // ----------------------------
