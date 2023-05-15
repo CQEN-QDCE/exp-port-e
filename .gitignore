@@ -17,3 +17,8 @@ node_modules
 
 # Ignorer le fichier de secrets des dispositifs physiques
 arduino_secrets.h
+
+# Circuit board sketches
+*-backups/
+fp-info-cache
+
