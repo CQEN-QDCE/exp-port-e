@@ -66,6 +66,15 @@ RSTO: Reset pin
 
 Pour que la connexion entre le module NodeMCU et le module PN532 fonctionne correctement, il faut faire un pull down du pin connecté au Chip Select (SS) du SPI. Pour ce faire, simplement faites une liaison entre le pin SS et le pin GND du module NodeMCU. Si l'on ne fait pas cette liaison, les modules ne marcheront pas du tout ensemble, il ne sera même pas possible de faire l'upload su sketch au micro-contrôleur. 
 
+
+## Acknowledgements
+
+Ce projet est basé sur d'autres projets
+
+- Wifi 
+- NFC 
+- NDEF 
+
 ## Références 
 
 [Description du pinout du module NodeMCU](https://esp8266-shop.com/esp8266-guide/esp8266-nodemcu-pinout/)

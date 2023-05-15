@@ -66,7 +66,7 @@ void setup(){
     setupWifi(); 
 
     // Configuration du NFC 
-    setupNfc(); 
+    // setupNfc(); 
 }
 
 /**
@@ -130,6 +130,10 @@ void setupNfc(){
     
     nfc.init();
     Serial.println(nfc.init());
+
+    /*uint32_t versiondata = nfc.getFirmwareVersion(); 
+    Serial.println("Version data: ")
+    Serial.println(versiondata);*/
 
 }
 
@@ -252,13 +256,22 @@ void emulerNfc(String adresse){
 
     // commenter la command si l'on ne veut pas du ndef message
     nfc.setNdefFile(ndefBuf, messageSize);
+
+    Serial.println("[NFC]  Setup de la carte NFC");
+    
+    // uid doit avoir 3 bytes!
+    nfc.setUid(uid);
+    
+    nfc.init();
+    Serial.println(nfc.init());
     
 
     Serial.println("[NFC] ------- Emulation de Tag NFC --------");
   
     // décommenter pour faire du overriding nedf au cas qu'une écriture soit déjà faite
+    // nfc.setNdefFile(ndefBuf, messageSize);
 
-    // start emulation bloquante(blocks)
+    // start emulation - bloquante 
     nfc.emulate(); 
 
     // ou start emulation avec du timeout
@@ -284,5 +297,5 @@ void emulerNfc(String adresse){
         // prochain cycle de clock
         etatAdresse = ADDRESS_NON_DISP;
     }
-    delay(1000); 
+    delay(1000);
 }
