@@ -22,3 +22,5 @@ arduino_secrets.h
 *-backups/
 fp-info-cache
 
+*.old
+
