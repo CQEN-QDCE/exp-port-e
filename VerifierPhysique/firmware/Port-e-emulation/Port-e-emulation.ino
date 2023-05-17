@@ -15,7 +15,8 @@ int messageSize;
 // Identificateur du tag. Doit avoir 3 bytes de long
   uint8_t uid[3] = { 0x12, 0x34, 0x56 };
 
-void setup(){
+void setup()
+{
   Serial.begin(115200);
   Serial.println("------- Emulation de Tag --------");
   
@@ -28,15 +29,17 @@ void setup(){
   CNUFTd0pUY3dUMWFZdW9tYkt0MTFqWnJrdXVNSlRvSnZQIl19
 */
 
-  String didcommInvite = "didcomm://invite?https://exp-port-e-url-courte.apps.exp.openshift.cqen.ca/hJtiA7NO";
+  // String didcommInvite    = "didcomm://invite?https://exp-port-e-url-courte.apps.exp.openshift.cqen.ca/hwkOHWp7";
+  String didcommInvite = "https://www.shortnsweet.link/LqabVuS4";
   // String didcommInvite = "didcomm://invite?https://exp-port-e-raccourci.apps.exp.openshift.cqen.ca/SUXn4MHF"; 
   // String didcommInvite = "didcomm://invite?https://www.shortnsweet.link/LqabVuS4";
+  
   message = NdefMessage();
   message.addUriRecord(didcommInvite); 
   messageSize = message.getEncodedSize();
   if (messageSize > sizeof(ndefBuf)) {
       Serial.println("ndefBuf est trop petit");
-      while (1) {}
+      while (1) { }
   }
   
   Serial.print("Taille du message Ndef codifié: ");
@@ -49,7 +52,7 @@ void setup(){
   
   // uid doit avoir 3 bytes!
   nfc.setUid(uid);
-  //Serial.println(message);
+  
   nfc.init();
   
   Serial.println(nfc.init());
@@ -58,7 +61,7 @@ void setup(){
 
 void loop(){
     // decommenter pour overriding ndef au cas une ecriture est deja faite
-    // nfc.setNdefFile(ndefBuf, messageSize); 
+    //nfc.setNdefFile(ndefBuf, messageSize); 
     
     // start emulation (blocks)
     nfc.emulate();
@@ -80,5 +83,6 @@ void loop(){
        NdefMessage msg = NdefMessage(tag_buf, length);
        msg.print();
     }
+
     delay(1000);
 }
