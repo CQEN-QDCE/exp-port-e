@@ -221,7 +221,7 @@ String requeteHttp(){
     // Atribue l'état disponible pour l'adresse
     etatAdresse = ADDRESS_DISP; 
     
-    // Lorsque le client sera disponible, on lira chave byte encore disponible
+    // Lorsque le client sera disponible, on lira chaque byte encore disponible
     // et on l'imprimera dans le serial monitor
     while (client.available())
     {
