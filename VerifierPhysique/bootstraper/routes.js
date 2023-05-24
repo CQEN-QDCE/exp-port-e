@@ -41,7 +41,7 @@ router.get('/connection', async (req, res) => {
     // console.log(shorturl);
 
     let ci = connectionData.invitation_url.substring(connectionData.invitation_url.lastIndexOf('?')); 
-    let nouvelleURL = "http://nfc.cqen.ca" + ci; 
+    let nouvelleURL = "didcomm://invite" + ci; 
     console.log(nouvelleURL);
 
     res.setHeader("Content-Type", "text/plain");
