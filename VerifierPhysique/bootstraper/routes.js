@@ -40,7 +40,7 @@ router.get('/connection', async (req, res) => {
     //let shorturl = await registrerShortURL(connectionData);
     // console.log(shorturl);
 
-    let ci = connectionData.invitation_url.substring(lastIndexOf('?')); 
+    let ci = connectionData.invitation_url.substring(connectionData.invitation_url.lastIndexOf('?')); 
     let nouvelleURL = "http://nfc.cqen.ca" + ci; 
     console.log(nouvelleURL);
 
