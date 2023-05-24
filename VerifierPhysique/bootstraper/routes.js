@@ -37,11 +37,16 @@ router.get('/connection', async (req, res) => {
     let connectionData = await createConnection(); 
     console.log("RETOUR: ", connectionData);
 
-    let shorturl = await registrerShortURL(connectionData);
-    console.log(shorturl);
+    //let shorturl = await registrerShortURL(connectionData);
+    // console.log(shorturl);
+
+    let ci = connectionData.invitation_url.substring(lastIndexOf('?')); 
+    let nouvelleURL = "http://nfc.cqen.ca" + ci; 
+    console.log(nouvelleURL);
 
     res.setHeader("Content-Type", "text/plain");
-    res.send(shorturl); 
+    //res.send(shorturl);
+    res.send(nouvelleURL); 
 });
 
 router.get('/users', (req, res) =>{
