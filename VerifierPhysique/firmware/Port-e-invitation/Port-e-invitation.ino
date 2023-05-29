@@ -1,4 +1,5 @@
 /*
+ * Deployé sur NodeMCU
  * 
  * Copyright (c) 2023 Gouvernement du Québec
  * Auteur: Julio Cesar Torres (torj01)
@@ -15,21 +16,17 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClientSecure.h>
 
-// NFC Libs
-#include <SPI.h>
-#include <PN532_SPI.h>
-#include "PN532.h"
+// SerialComms Lib 
+#include <SoftwareSerial.h>
 
+// CRC32 Lib
+#include <CRC32.h>
 
 // -----------------------------
 // Fichiers header personnalisés
 // -----------------------------
 #include "arduino_secrets.h"
 #include "thingProperties.h"
-
-// Header  NFC 
-#include "emulatetag.h"
-#include "NdefMessage.h"
 
 // -----------------------------
 // Variables globales 
@@ -43,38 +40,70 @@ WiFiClientSecure client;
 //    sinon, si l'adresse est généré et pas encore consommé, son état est 1 
 int etatAdresse;
 
-// Objets de la librairie PN532
-PN532_SPI pn532spi(SPI, SPI_SS_PIN);
-EmulateTag nfc(pn532spi);
+// Créé une porte serial virtuale aux pins digitaux 6(RX) et 7(TX)
+// Dans le cas de NodeMCU, TX=GPIO5=D1; RX=GPIO4=D2
+// Alors, connecter le pin D2 à RX, et D1 à TX; dans le code, référencer par les # gpio (4, 5)
+SoftwareSerial porteSerial(4, 5);
 
-// Objets de la librairie NDEF
-uint8_t ndefBuf[NFC_BUFFER_SIZE];
-NdefMessage message;
-int messageSize;
-
-// Identificateur du tag. Doit avoir 3 bytes de long - valeur fixe
-  uint8_t uid[3] = { 0xCA, 0xFE, 0x10 };
-
+CRC32 crc; 
 
 /**
  * 
  */
 void setup(){
-    Serial.begin(115200);
+    //delay(3000);   // Serait il necessaire? 
+    
+    Serial.begin(115200);    // Baud plus vite pour l'application
+    porteSerial.begin(9600); // Baud plus lent pour la communication serial 
 
-    // Configuration du wifi
-    setupWifi(); 
+    Serial.println("[WIFI] Setup de l'application..."); 
 
-    // Configuration du NFC 
-    // setupNfc(); 
+    // Initialiser le CRC 
+    crc.reset();
+
+    setupWifi();
+
+    // -----------------------------
+    // Configuration de l'état: 
+    // au demarrage, l'addresse est non 
+    // disponible pour forcer l'acquisition
+    // d'une nouvelle demande de preuve
+    // -----------------------------
+    etatAdresse = ADDRESS_NON_DISP; 
+    
+    serialFlush();
+}
+
+/**
+ * 
+ */
+void loop(){
+    Serial.println("[WIFI] Loop... ");
+
+    if(porteSerial.available() > 0){
+        String msg = porteSerial.readStringUntil('\n');
+
+        // Si le message reçu est 0x20 (générer nouveau) on génére l'addresse. 
+        // Sinon, on continue le loop.
+        Serial.print("[WIFI] Signal reçu: ");
+        Serial.println(SIG_GEN);
+        if(msg == SIG_GEN){
+            Serial.println("[WIFI] Adresse non disponible. Requisition d'un nouvel adresse en cours..."); 
+            String adresse = generer();
+            serialComm(adresse); 
+            delay(DELAY_L);
+        } else {
+            Serial.println("[WIFI] Pas le signal correct."); 
+        }
+    }
+    delay(DELAY_M);     // réconsiderer le delay ici. 
 }
 
 /**
  * 
  */
 void setupWifi(){
-
-    Serial.println("[NFC]  Setup NFC");
+    Serial.println("[WIFI] Setup WIFI");
 
     // -----------------------------
     // Configuration du WiFi 
@@ -93,7 +122,7 @@ void setupWifi(){
     while (WiFi.status() != WL_CONNECTED)
     {
         Serial.print(".");
-        delay(500);
+        delay(DELAY_S);
     }
     Serial.println("[WIFI] ");
     Serial.println("[WIFI] WiFi connecté");
@@ -102,67 +131,19 @@ void setupWifi(){
     Serial.print("[WIFI] ");
     Serial.println(ip);
 
-    // Si vous n'avez pas besoin de checker le fingerprint
+    // Si vous n'avez pas besoin de checker le fingerprint, décommenter la ligne suivante
     // client.setInsecure();
 
     // Si vous voulez checker le fingerprint
     client.setFingerprint(HOST_FINGERPRINT);
-
-    // -----------------------------
-    // Configuration de l'état: 
-    // au demarrage, l'addresse est non 
-    // disponible pour forcer l'acquisition
-    // d'une nouvelle demande de preuve
-    // -----------------------------
-    etatAdresse = ADDRESS_NON_DISP; 
-
 }
 
 /**
  * 
  */
-void setupNfc(){
- 
-    Serial.println("[NFC]  Setup NFC");
-    
-    // uid doit avoir 3 bytes!
-    nfc.setUid(uid);
-    
-    nfc.init();
-    Serial.println(nfc.init());
-
-    /*uint32_t versiondata = nfc.getFirmwareVersion(); 
-    Serial.println("Version data: ")
-    Serial.println(versiondata);*/
-
-}
-
-/**
- * 
- */
-void loop(){
-    // Les instructions du loop sont inscrits ici
-
-    // Vérifie l'état de l'addresse. Si l'adresse n'est pas disponible, faire appel
-    // à la méthode makeHttpRequest() pour créér un novel adresse. 
-    if(etatAdresse == ADDRESS_NON_DISP){
-      Serial.println("[APP]  Adresse non disponible. Requisition d'un nouvel adresse en cours..."); 
-      String adresse = requeteHttp();
-
-      Serial.println("[APP]  Broadcast de l'addresse NFC");
-      //emulerNfc(adresse);
-      serialComm(adresse); 
-    }   
-}
-
-/**
- * 
- */
-String requeteHttp(){
-
-    // Ouvre la connexion avec le serveur (utiliser porte 80 [HTTPS_PORT] si HTTP)
-    if (!client.connect(HOST_ADDRESS, HTTPS_PORT))
-    {
+String generer(){
+// Ouvre la connexion avec le serveur (utiliser porte 80 [HTTPS_PORT] si HTTP)
+    if (!client.connect(HOST_ADDRESS, HTTPS_PORT)){
         Serial.println(F("[WIFI] Connexion non réussie"));
         return "";
     }
@@ -185,8 +166,7 @@ String requeteHttp(){
 
     client.println(F("Cache-Control: no-cache"));
 
-    if (client.println() == 0)
-    {
+    if (client.println() == 0){
         Serial.println(F("[WIFI] L'envoi de la requête n'est pas réussie"));
         return "";
     }
@@ -199,8 +179,7 @@ String requeteHttp(){
 
     // Saute les HTTP headers
     char endOfHeaders[] = "\r\n\r\n";
-    if (!client.find(endOfHeaders))
-    {
+    if (!client.find(endOfHeaders)){
         Serial.println(F("[WIFI] Réponse invalide"));
         return "";
     }
@@ -209,8 +188,7 @@ String requeteHttp(){
     //
     // peek() va lire le character, mais ne vas pas l'enlever de la queue
     String address = ""; 
-    while (client.available() && client.peek() != '{' && client.peek() != '[')
-    {
+    while (client.available() && client.peek() != '{' && client.peek() != '['){
         char c = 0;
         client.readBytes(&c, 1);
         address += c; 
@@ -223,8 +201,7 @@ String requeteHttp(){
     
     // Lorsque le client sera disponible, on lira chaque byte encore disponible
     // et on l'imprimera dans le serial monitor
-    while (client.available())
-    {
+    while (client.available()){
         char c = 0;
         client.readBytes(&c, 1);
         Serial.print(c);
@@ -232,83 +209,23 @@ String requeteHttp(){
     return address;
 }
 
+/**
+ * Retourne juste la partie de l'indentifiant unique du short-url
+ */
 void serialComm(String adresse){
-    int adresse_len = adresse.length() + 1; 
-    char addr[adresse_len]; 
-    adresse.toCharArray(addr, adresse_len);
-
-    Serial.print("Adresse: "); 
-    Serial.println(addr); 
-    Serial.print("Len: ");
-    Serial.println(adresse_len);
-    Serial.write(addr);
+    Serial.print("[WIFI] Adresse généré et lu:");
+    Serial.println(adresse); 
+    Serial.print("[WIFI] À envoyer: "); 
+    Serial.println(adresse);
+    porteSerial.write(adresse.c_str());
+    Serial.println("[WIFI] Envoyé via SerialComms UART");
 }
 
 /**
  * 
  */
-void emulerNfc(String adresse){
-
-  // NFC 
-
-    // -----------------------------
-    // Configuration de la carte NFC 
-    // -----------------------------    
-    message = NdefMessage();
-    message.addUriRecord(adresse); 
-    messageSize = message.getEncodedSize();
-    if (messageSize > sizeof(ndefBuf)) {
-        Serial.println("[NFC]  ndefBuf est trop petit");
-        while (1) { }
+void serialFlush(){
+    while(porteSerial.available() > 0) {
+        char t = porteSerial.read();
     }
-
-    Serial.print("[NFC]  Taille du message Ndef codifié: ");
-    Serial.println(messageSize);
-
-    message.encode(ndefBuf);
-
-    // commenter la command si l'on ne veut pas du ndef message
-    nfc.setNdefFile(ndefBuf, messageSize);
-
-    Serial.println("[NFC]  Setup de la carte NFC");
-    
-    // uid doit avoir 3 bytes!
-    nfc.setUid(uid);
-    
-    nfc.init();
-    Serial.println(nfc.init());
-    
-
-    Serial.println("[NFC] ------- Emulation de Tag NFC --------");
-  
-    // décommenter pour faire du overriding nedf au cas qu'une écriture soit déjà faite
-    // nfc.setNdefFile(ndefBuf, messageSize);
-
-    // start emulation - bloquante 
-    nfc.emulate(); 
-
-    // ou start emulation avec du timeout
-    /*
-    *if(!nfc.emulate(1000)){
-    *  Serial.println("Émulation a tombé en time out");
-    *}
-    */
-
-    // empêche l'écriture du tag
-    // nfc.setTagWritable(false); 
-
-    if(nfc.writeOccured()){
-        Serial.println("[NFC]  Écriture NFC faite!");
-        uint8_t* tag_buf; 
-        uint16_t length; 
-
-        nfc.getContent(&tag_buf, &length); 
-        NdefMessage msg = NdefMessage(tag_buf, length); 
-        msg.print();
-
-        // Adresse utilisé, alors indisponible. Marque-le pour regeneration lors du
-        // prochain cycle de clock
-        etatAdresse = ADDRESS_NON_DISP;
-    }
-    delay(1000);
 }
