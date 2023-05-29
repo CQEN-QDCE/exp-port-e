@@ -101,7 +101,7 @@ async function registrerShortURL(connectionData){
 
     axios.defaults.baseURL = BASE_SHORT_URL;
 
-    let didcommAddr = "didcomm://invite?".concat(connectionData.invitation_url.substring(connectionData.invitation_url.indexOf('?'))); 
+    let didcommAddr = "didcomm://invite".concat(connectionData.invitation_url.substring(connectionData.invitation_url.indexOf('?'))); 
     // Créé le payload pour l'appel au shortener
     let payload = {
         //"originalUrl": connectionData.invitation_url,
@@ -113,7 +113,8 @@ async function registrerShortURL(connectionData){
 
     try{
         const response = await axios.post(`/v1/short-url`, payload, config); 
-        let shortUrl = "didcomm://invite".concat(BASE_SHORT_URL.concat(response.data.uniqueId));
+        //let shortUrl = "didcomm://invite".concat(BASE_SHORT_URL.concat(response.data.uniqueId));
+        let shortUlr = BASE_SHORT_URL.concat(response.data.uniqueId); 
         return shortUrl;
     } catch(error) {
         console.log(error);
