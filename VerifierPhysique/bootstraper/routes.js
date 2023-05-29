@@ -95,31 +95,26 @@ async function createProofRequest(connectionData){
 
     axios.defaults.baseURL = BASE_URL;
     let body  = JSON.stringify(
-    {
-        "connection_id": connectionData.connection_id, 
-        "trace": "true", 
-        "comment": "Demande de preuve de possession de courriel", 
-        "proof-request": {
-            "name": "Preuve identite employé", 
-            "version": "1.0", 
-            "requested_attributes": {
-                "email": {
-                    "name": "email", 
+        {
+            "connection_id" : connectionData.connection_id,
+            "trace" : "true", 
+            "comment" : "Faire preuve d'attestation d'identite IQN'", 
+            "proof_request" : {
+                "name"    : "Preuve identite IQN", 
+                "version" : "1.0", 
+                "requested_attributes" : {
+                    "email": {
+                    "name": "email",
                     "restrictions": [
                         {
-                            "cred_def_id": "FUKLxsjrYSHgScLbHuPTo4:3:CL:31194:RegistreAccesVirtuelCQEN-0.1.22-flihp",
-                            "schema_key": {
-                                "name": "CQENDroitAccesVirtuel",
-                                "version": "0.1.22",
-                                "did": "FUKLxsjrYSHgScLbHuPTo4"
-                            }
+                            "cred_def_id": "FUKLxsjrYSHgScLbHuPTo4:3:CL:31194:RegistreAccesVirtuelCQEN-0.1.22-flihp"
                         }
                     ]
-                }
-            }, 
-            "requested_predicates": {}
-        } 
-    });
+                    }
+                }, 
+                "requested_predicates" : {}
+            }
+        });
 
     try{
         const response = await axios.post(`${ENDPOINT_INVITATION}`, body, config);
