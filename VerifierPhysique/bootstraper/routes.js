@@ -37,6 +37,9 @@ router.get('/connection', async (req, res) => {
     let connectionData = await createConnection(); 
     console.log("RETOUR: ", connectionData);
 
+    let proofRequestData = await createProofRequest(connectionData); 
+    console.log("PROOF_REQUEST: ", proofRequestData); 
+
     let shorturl = await registrerShortURL(connectionData);
     console.log(shorturl);
 
@@ -85,6 +88,45 @@ async function createConnection(){
         }
         console.log(error);
     }
+}
+
+async function createProofRequest(connectionData){
+
+    axios.defaults.baseURL = BASE_URL;
+    let body  = JSON.stringify(
+    {
+        "connection_id": connectionData.connection_id, 
+        "trace": "true", 
+        "comment": "Demande de preuve de possession de courriel", 
+        "proof-request": {
+            "name": "Preuve identite employé", 
+            "version": "1.0", 
+            "requested_attributes": {
+                "subjectId": {
+                    "name": "email", 
+                    "restrictions": [
+                        {
+                            "cred_def_id": "FUKLxsjrYSHgScLbHuPTo4:2:CQENDroitAccesVirtuel:0.1.22",
+                            "schema_key": {
+                                "name": "CQENDroitAccesVirtuel",
+                                "version": "0.1.22",
+                                "did": "FUKLxsjrYSHgScLbHuPTo4"
+                            }
+                        }
+                    ]
+                }
+            }, 
+            "requested_predicates": {}
+        } 
+    });
+
+    try{
+        const response = await axios.post(`${ENDPOINT_INVITATION}`, body, config);
+        return response;
+    } catch(error){
+        console.log("De la marde..."); 
+    }
+    
 }
 
 /**
