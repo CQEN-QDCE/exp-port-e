@@ -1,88 +1,130 @@
-#include "emulatetag.h"
-#include "NdefMessage.h"
+// ----------------------------
+// Standard Libraries
+// ----------------------------
 
+// NFC
 #include <SPI.h>
 #include <PN532_SPI.h>
 #include "PN532.h"
 
+// Software Serial
+#include <SoftwareSerial.h>
+
+// -----------------------------
+// Fichiers header personnalisés
+// -----------------------------
+#include "thingProperties.h"
+
+// Header  NFC 
+#include "emulatetag.h"
+#include "NdefMessage.h"
+
+// -----------------------------
+// Variables globales 
+// -----------------------------
+
+// Objets de la librairie PN532
 PN532_SPI pn532spi(SPI, 10);
 EmulateTag nfc(pn532spi);
 
-uint8_t ndefBuf[512];
+// Objets de la librairie NDEF
+uint8_t ndefBuf[NFC_BUFFER_SIZE];
 NdefMessage message;
 int messageSize;
 
 // Identificateur du tag. Doit avoir 3 bytes de long
-  uint8_t uid[3] = { 0x12, 0x34, 0x56 };
+uint8_t uid[3] = { 0x12, 0x34, 0x56 };
 
-void setup()
-{
-  Serial.begin(115200);
-  Serial.println("------- Emulation de Tag --------");
-  
-/*  
-  didcomm://invite?c_i=eyJAdHlwZSI6ICJkaWQ6c292OkJ6Q2JzTlloTXJqSGlxWkRUVUFTSGc7c3B
-  lYy9jb25uZWN0aW9ucy8xLjAvaW52aXRhdGlvbiIsICJAaWQiOiAiZTU0OWQ5YjUtNDZhZi00YTIxLWI
-  4NWMtMDQyYzJmMzQ4NGM3IiwgImxhYmVsIjogIlNlcnZpY2UgZGUgdlx1MDBlOXJpZmljYXRpb24gZGU
-  gY291cnJpZWwgZHUgQ1FFTiIsICJzZXJ2aWNlRW5kcG9pbnQiOiAiaHR0cHM6Ly9leHAtcG9ydC1lLXY
-  2LmFwcHMuZXhwLm9wZW5zaGlmdC5jcWVuLmNhIiwgInJlY2lwaWVudEtleXMiOiBbIkRvcVZKNlVlWEx
-  CNUFTd0pUY3dUMWFZdW9tYkt0MTFqWnJrdXVNSlRvSnZQIl19
-*/
+// Objet de la librairie SoftwareSerial
+SoftwareSerial porteSerial(6, 7);  // Cria uma porta serial virtual nos pinos digitais 6 (RX) e 7 (TX)
 
-  // String didcommInvite    = "didcomm://invite?https://exp-port-e-url-courte.apps.exp.openshift.cqen.ca/hwkOHWp7";
-  String didcommInvite = "https://www.shortnsweet.link/LqabVuS4";
-  // String didcommInvite = "didcomm://invite?https://exp-port-e-raccourci.apps.exp.openshift.cqen.ca/SUXn4MHF"; 
-  // String didcommInvite = "didcomm://invite?https://www.shortnsweet.link/LqabVuS4";
-  
-  message = NdefMessage();
-  message.addUriRecord(didcommInvite); 
-  messageSize = message.getEncodedSize();
-  if (messageSize > sizeof(ndefBuf)) {
-      Serial.println("ndefBuf est trop petit");
-      while (1) { }
-  }
-  
-  Serial.print("Taille du message Ndef codifié: ");
-  Serial.println(messageSize);
+// Variable qui fait track de l'état de l'adresse de l'application
+int etatAdresse; 
 
-  message.encode(ndefBuf);
-  
-  // commenter la command si l'on ne veut pas du ndef message
-  nfc.setNdefFile(ndefBuf, messageSize);
-  
-  // uid doit avoir 3 bytes!
-  nfc.setUid(uid);
-  
-  nfc.init();
-  
-  Serial.println(nfc.init());
-  Serial.println(true);
+/**
+ *  
+ */
+void setup(){
+    Serial.begin(115200); 
+    porteSerial.begin(9600);
+    Serial.println("[Expérimentation port-e, CQEN 2023]");
+    Serial.println("[NFC] Setup de l'application..."); 
+
+    etatAdresse = ADDRESS_NON_DISP;
 }
 
+/**
+ * 
+ */
 void loop(){
-    // decommenter pour overriding ndef au cas une ecriture est deja faite
-    //nfc.setNdefFile(ndefBuf, messageSize); 
+    if(etatAdresse == ADDRESS_NON_DISP){
+        Serial.println("[NFC] Adresse non dispo. Demander génération...");
+        broadcast(genererAdresse());
+    }
+    delay(DELAY_M);
+}
+
+String genererAdresse(){
+    Serial.println("[NFC] Génération de l'adresse en cours...");
+    porteSerial.write(SIG_GEN);
+
+    String addr = "";
+    delay(DELAY_L+DELAY_M); 
+
+    if(porteSerial.available() > 0){
+        addr = porteSerial.readStringUntil('\n');
+        Serial.print("[NFC] Addr généré: "); 
+        Serial.println(addr);
+    }else {
+        Serial.println("[NFC] Pas de temps disponible pour recevoir...");
+    }
+    etatAdresse = ADDRESS_DISP; 
+    return addr;
+}
+
+void broadcast(String param){
+    Serial.println("[NFC] Broadcasting l'adresse");
+    Serial.print("[NFC] Parameter: ");
+    Serial.println(param.c_str()); 
+    Serial.print("Length: ");
+    Serial.println(param.length());
     
-    // start emulation (blocks)
-    nfc.emulate();
-        
-    // ou start emulation avec du timeout
-    /*if(!nfc.emulate(1000)){ // timeout 1 second
-      Serial.println("timed out");
-    }*/
+    message = NdefMessage(); 
+    message.addUriRecord(param);
+    messageSize = message.getEncodedSize();
     
-    // empecher ecriture du tag
-    // nfc.setTagWriteable(false);
+    if (messageSize > sizeof(ndefBuf)) {
+        Serial.println("[NFC] ndefBuf est trop petit");
+        while (1) { }
+    }
+    
+    message.encode(ndefBuf); 
+
+    // commenter la command si l'on ne veut pas du ndef message
+    nfc.setNdefFile(ndefBuf, messageSize);
+    nfc.setUid(uid); // uid doit avoir 3 bytes!
+    nfc.init();
+    nfc.emulate(); // start emulation (blocks l'exécution du loop du firmware)
     
     if(nfc.writeOccured()){
-       Serial.println("\nWrite occured !");
-       uint8_t* tag_buf;
-       uint16_t length;
-       
-       nfc.getContent(&tag_buf, &length);
-       NdefMessage msg = NdefMessage(tag_buf, length);
-       msg.print();
+        
+        Serial.println("[NFC] \nWrite occured !"); 
+        uint8_t* tag_buf; uint16_t length;
+        nfc.getContent(&tag_buf, &length);
+        NdefMessage msg = NdefMessage(tag_buf, length);
+        msg.print();
     }
+    Serial.println("[NFC] Message livré au telephone");
+    delay(DELAY_S);
+    etatAdresse = ADDRESS_NON_DISP;
+}
 
-    delay(1000);
+/**
+ * 
+ */
+void serialFlush(){
+
+    while(porteSerial.available() > 0) {
+        char t = porteSerial.read();
+    }
 }
