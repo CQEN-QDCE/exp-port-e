@@ -103,11 +103,11 @@ async function createProofRequest(connectionData){
             "name": "Preuve identite employé", 
             "version": "1.0", 
             "requested_attributes": {
-                "subjectId": {
+                "email": {
                     "name": "email", 
                     "restrictions": [
                         {
-                            "cred_def_id": "FUKLxsjrYSHgScLbHuPTo4:2:CQENDroitAccesVirtuel:0.1.22",
+                            "cred_def_id": "FUKLxsjrYSHgScLbHuPTo4:3:CL:31194:RegistreAccesVirtuelCQEN-0.1.22-flihp",
                             "schema_key": {
                                 "name": "CQENDroitAccesVirtuel",
                                 "version": "0.1.22",
