@@ -76,6 +76,7 @@ async function createConnection(){
         console.log("BASE_URL", BASE_URL); 
         console.log("ENDPOINT_CONNECTION: ", ENDPOINT_CONNECTION);
         const response = await axios.post(`${ENDPOINT_CONNECTION}`,{}, config);
+        console.log(response.data);
         return {
             "connection_id": response.data.connection_id,
             "invitation_url": response.data.invitation_url 
@@ -95,6 +96,7 @@ async function createConnection(){
 async function createProofRequest(connectionData){
 
     axios.defaults.baseURL = BASE_URL;
+
     let body  = JSON.stringify(
         {
             "connection_id" : connectionData.connection_id,
@@ -121,7 +123,7 @@ async function createProofRequest(connectionData){
         const response = await axios.post(`${ENDPOINT_INVITATION}`, body, config);
         return response;
     } catch(error){
-        console.log("De la marde..."); 
+        console.log("Erreur survenu de l'application..."); 
         console.log(error);
     }
     
