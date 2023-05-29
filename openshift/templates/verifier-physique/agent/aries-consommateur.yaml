@@ -265,6 +265,7 @@ objects:
                 --admin 0.0.0.0 ${ADMIN_INTERFACE_PORT}
                 --endpoint https://${AGENT_SUBDOMAIN}.${APP_DOMAIN}
                 --genesis-url "${GENESIS_FILE_URL}"
+                --auto-accept-invites
                 --auto-accept-requests
                 --auto-respond-messages
                 --auto-respond-credential-proposal
