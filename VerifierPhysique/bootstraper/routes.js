@@ -37,16 +37,16 @@ router.get('/connection', async (req, res) => {
     let connectionData = await createConnection(); 
     console.log("RETOUR: ", connectionData);
 
-    //let shorturl = await registrerShortURL(connectionData);
-    // console.log(shorturl);
+    let shorturl = await registrerShortURL(connectionData);
+    console.log(shorturl);
 
-    let ci = connectionData.invitation_url.substring(connectionData.invitation_url.lastIndexOf('?')); 
+    /*let ci = connectionData.invitation_url.substring(connectionData.invitation_url.lastIndexOf('?')); 
     let nouvelleURL = "didcomm://invite" + ci; 
-    console.log(nouvelleURL);
+    console.log(nouvelleURL);*/
 
     res.setHeader("Content-Type", "text/plain");
-    //res.send(shorturl);
-    res.send(nouvelleURL); 
+    res.send(shorturl);
+    //res.send(nouvelleURL); 
 });
 
 router.get('/users', (req, res) =>{
@@ -101,9 +101,11 @@ async function registrerShortURL(connectionData){
 
     axios.defaults.baseURL = BASE_SHORT_URL;
 
+    let didcommAddr = "didcomm://invite?".concat(connectionData.invitation_url.substring(connectionData.invitation_url.indexOf('?'))); 
     // Créé le payload pour l'appel au shortener
     let payload = {
-        "originalUrl": connectionData.invitation_url,
+        //"originalUrl": connectionData.invitation_url,
+        "originalUrl": didcommAddr,
         "uniqueId": "", 
         "numberClicks": 0, 
         "user": "port-e-user"
