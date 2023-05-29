@@ -39,19 +39,22 @@ router.get('/connection', async (req, res) => {
     console.log("RETOUR: ", connectionData);
 
     let proofRequestData = await createProofRequest(connectionData);
-    console.log(proofRequestData.statusText); 
+    console.log(proofRequestData.data); 
     //console.log("PROOF_REQUEST: ", proofRequestData); 
 
-    let shorturl = await registrerShortURL(connectionData);
-    console.log(shorturl);
-
+    // Methode à proscrire... 
     /*let ci = connectionData.invitation_url.substring(connectionData.invitation_url.lastIndexOf('?')); 
     let nouvelleURL = "didcomm://invite" + ci; 
-    console.log(nouvelleURL);*/
+    console.log(nouvelleURL);
+    //res.send(nouvelleURL);
+    */
 
+    // Méthode à privilegier... 
+    let shorturl = await registrerShortURL(connectionData);
+    console.log(shorturl);
     res.setHeader("Content-Type", "text/plain");
     res.send(shorturl);
-    //res.send(nouvelleURL); 
+     
 });
 
 router.get('/users', (req, res) =>{
@@ -99,6 +102,7 @@ async function createProofRequest(connectionData){
 
     let body  = JSON.stringify(
         {
+            "auto_verify": true,
             "connection_id" : connectionData.connection_id,
             "trace" : "true", 
             "comment" : "Faire preuve d'attestation d'identite IQN'", 
