@@ -125,6 +125,7 @@ async function createProofRequest(connectionData){
         return response;
     } catch(error){
         console.log("De la marde..."); 
+        console.log(error);
     }
     
 }
