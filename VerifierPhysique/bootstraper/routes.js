@@ -114,7 +114,7 @@ async function registrerShortURL(connectionData){
     try{
         const response = await axios.post(`/v1/short-url`, payload, config); 
         //let shortUrl = "didcomm://invite".concat(BASE_SHORT_URL.concat(response.data.uniqueId));
-        let shortUlr = BASE_SHORT_URL.concat(response.data.uniqueId); 
+        let shortUrl = BASE_SHORT_URL.concat(response.data.uniqueId); 
         return shortUrl;
     } catch(error) {
         console.log(error);
