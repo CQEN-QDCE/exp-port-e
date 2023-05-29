@@ -15,6 +15,7 @@ dotenv.config();
 const BASE_URL            = process.env.BASE_URL;
 const BASE_SHORT_URL      = process.env.BASE_SHORT_URL;
 const ENDPOINT_CONNECTION = process.env.ENDPOINT_CONNECTION;
+const ENDPOINT_INVITATION = process.env.ENDPOINT_INVITATION;
 const X_API_KEY           = process.env.X_API_KEY;
 const APP_PORT            = process.env.APP_PORT;
 
