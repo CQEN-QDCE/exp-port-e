@@ -38,8 +38,9 @@ router.get('/connection', async (req, res) => {
     let connectionData = await createConnection(); 
     console.log("RETOUR: ", connectionData);
 
-    let proofRequestData = await createProofRequest(connectionData); 
-    console.log("PROOF_REQUEST: ", proofRequestData); 
+    let proofRequestData = await createProofRequest(connectionData);
+    console.log(proofRequestData.statusText); 
+    //console.log("PROOF_REQUEST: ", proofRequestData); 
 
     let shorturl = await registrerShortURL(connectionData);
     console.log(shorturl);
