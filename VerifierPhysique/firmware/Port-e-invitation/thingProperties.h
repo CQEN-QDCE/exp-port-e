@@ -41,3 +41,16 @@
 #define HTTP_PORT           80
 #define HTTPS_PORT          443
 #define NFC_BUFFER_SIZE     512
+
+#define SIG_INI     "0xAA"
+#define SIG_FIN     "0xAB"
+#define SIG_ACK     "0xBA"
+#define SIG_NACK    "0xBB"
+
+#define SIG_GEN     "0x10"
+#define SIG_RENV    "0x11"
+#define SIG_CAN     "0x12"
+
+#define DELAY_S     1000
+#define DELAY_M     3000
+#define DELAY_L     5000
