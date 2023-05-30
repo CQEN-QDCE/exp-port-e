@@ -51,7 +51,7 @@ CRC32 crc;
  * 
  */
 void setup(){
-    //delay(3000);   // Serait il necessaire? 
+    delay(DELAY_M);             // Serait il necessaire? 
     
     Serial.begin(115200);    // Baud plus vite pour l'application
     porteSerial.begin(9600); // Baud plus lent pour la communication serial 
