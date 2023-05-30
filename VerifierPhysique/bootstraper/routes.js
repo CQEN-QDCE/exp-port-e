@@ -106,21 +106,32 @@ async function createProofRequest(connectionData){
         {
             "connection_id": connectionData.connection_id,
             "comment": "",
-            "proof_request": {
-                "name": "TestTest",
-                "version": "1.0",
-                "requested_attributes": {
-                    "attribute_referent_1": {
-                    "name": "email",
-                    "restrictions": [
-                            {
-                                "cred_def_id": "FUKLxsjrYSHgScLbHuPTo4:3:CL:31194:RegistreAccesVirtuelCQEN-0.1.22-flihp"
+            "request_presentations~attach": [
+                {
+                    "proof_request": {
+                        "name": "TestTest",
+                        "version": "1.0",
+                        "requested_attributes": {
+                            "attribute_referent_1": {
+                            "name": "email",
+                            "restrictions": [
+                                    {
+                                        "cred_def_id": "FUKLxsjrYSHgScLbHuPTo4:3:CL:31194:RegistreAccesVirtuelCQEN-0.1.22-flihp"
+                                    }
+                                ]
                             }
-                        ]
+                        },
+                        "requested_predicates": {}
                     }
-                },
-                "requested_predicates": {}
-            },
+                }
+            ],
+            "service": [
+                {
+                  "recipientKeys": [connectionData.recipient_keys],
+                  "routingKeys": [],
+                  "serviceEndpoint": BASE_URL
+                }
+            ],    
             "trace": false
             });
         /*    
