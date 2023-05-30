@@ -4,6 +4,7 @@
 * SPDX-License-Identifier: LiLiQ-R-v.1.1
 * License-Filename: /LICENSE
 */
+
 const express = require('express'); 
 const router  = express.Router(); 
 
@@ -28,7 +29,11 @@ const config = {
   }
 };
 
-// Routing de l'application express 
+/**
+ * 
+ *    Routing de l'application express
+ * 
+ */
 
 router.get('/', (req, res) => {
     res.redirect('/index.html');
@@ -66,15 +71,24 @@ async function createConnection(){
 
     axios.defaults.baseURL = BASE_URL;
 
+    let invitationBody = 
+    {
+        "metadata": {},
+        "my_label": "Connexion Port-e",
+        "service_endpoint": BASE_URL
+    }
+
+
     try{
         console.log("BASE_URL", BASE_URL); 
         console.log("ENDPOINT_CONNECTION: ", ENDPOINT_CONNECTION);
-        const response = await axios.post(`${ENDPOINT_CONNECTION}`,{}, config);
+        const response = await axios.post(`${ENDPOINT_CONNECTION}`, invitationBody, config);
         console.log(response.data);
         return {
             "connection_id": response.data.connection_id,
             "invitation_url": response.data.invitation_url, 
-            "recipient_keys": response.data.invitation.recipientKeys
+            "recipient_keys": response.data.invitation.recipientKeys, 
+            "service_endpoint": response.data.invitation.serviceEndpoint
             }
     } catch (error) {
         if(error.response){ 
