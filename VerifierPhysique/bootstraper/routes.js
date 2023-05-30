@@ -28,7 +28,11 @@ const config = {
   }
 };
 
-// Routing de l'application express 
+/**
+ * 
+ *      Routing de l'application express
+ * 
+ */
 
 router.get('/', (req, res) => {
     res.redirect('/index.html');
@@ -36,7 +40,7 @@ router.get('/', (req, res) => {
 
 router.get('/connection', async (req, res) => {
     let connectionData = await createConnection(); 
-    console.log("RETOUR: ", connectionData);
+    console.log("RETOUR CONNECTION: ", connectionData);
 
     let proofRequestData = await createProofRequest(connectionData);
     //console.log(proofRequestData.data); 
@@ -57,6 +61,7 @@ router.get('/connection', async (req, res) => {
      
 });
 
+/*   ---- faire netoyage
 router.get('/users', (req, res) =>{
     res.redirect('/adresseNonDispo.html'); 
 }); 
@@ -65,7 +70,7 @@ router.get('/users/:id', (req, res) => {
     const userId = req.params.id; 
     res.send(`Details of user ${userId}`);
 });
-  
+  */
 
 /**
  * Crée une nouvelle connexion à l'agent 
@@ -97,6 +102,11 @@ async function createConnection(){
     }
 }
 
+/**
+ * Crée une nouvelle demande de preuve
+ * @param {*} connectionData objet qui contient le connection_id, l'invitation_url et le recipient_keys
+ * @returns une demande de preuve générée à faire présentation
+ */
 async function createProofRequest(connectionData){
 
     axios.defaults.baseURL = BASE_URL;
@@ -132,30 +142,8 @@ async function createProofRequest(connectionData){
                   "serviceEndpoint": BASE_URL
                 }
             ],    
-            "trace": false
-            });
-        /*    
-        {
-            "connection_id" : "5261334c-d814-4b33-b3ef-bd4e5bdcf72c",
-            "trace" : "true", 
-            "comment" : "Faire preuve d'attestation d'identite IQN'", 
-            "proof_request" : {
-                "name"    : "Preuve identite IQN", 
-                "version" : "1.0", 
-                "requested_attributes" : {
-                    "email": {
-                    "name": "email",
-                    "restrictions": [
-                        {
-                        "cred_def_id": "FUKLxsjrYSHgScLbHuPTo4:3:CL:31194:RegistreAccesVirtuelCQEN-0.1.22-flihp"
-                        }
-                    ]
-                    }
-                }, 
-                "requested_predicates" : {}
-            }
-        });*/
-
+            "trace": true
+        });
     try{
         const response = await axios.post(`${ENDPOINT_INVITATION}`, body, config);
         return response;
