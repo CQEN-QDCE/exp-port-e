@@ -56,15 +56,6 @@ router.get('/connection', async (req, res) => {
     res.send(shorturl);
      
 });
-
-router.get('/users', (req, res) =>{
-    res.redirect('/adresseNonDispo.html'); 
-}); 
-
-router.get('/users/:id', (req, res) => {
-    const userId = req.params.id; 
-    res.send(`Details of user ${userId}`);
-});
   
 
 /**
@@ -104,6 +95,28 @@ async function createProofRequest(connectionData){
     let body  = JSON.stringify(
 
         {
+            "connection_id" : "5261334c-d814-4b33-b3ef-bd4e5bdcf72c",
+            "trace" : "true", 
+            "comment" : "Faire preuve d'attestation d'identite IQN'", 
+            "proof_request" : {
+                "name"    : "Preuve identite IQN", 
+                "version" : "1.0", 
+                "requested_attributes" : {
+                    "email": {
+                    "name": "email",
+                    "restrictions": [
+                        {
+                        "cred_def_id": "FUKLxsjrYSHgScLbHuPTo4:3:CL:31194:RegistreAccesVirtuelCQEN-0.1.22-flihp"
+                        }
+                    ]
+                    }
+                }, 
+                "requested_predicates" : {}
+            }
+        });
+
+        /*
+        {
             "connection_id": connectionData.connection_id,
             "comment": "",
             "proof_request": {
@@ -123,7 +136,7 @@ async function createProofRequest(connectionData){
             },
             "trace": false
         });
-        /*    
+            
         {
             "connection_id" : "5261334c-d814-4b33-b3ef-bd4e5bdcf72c",
             "trace" : "true", 
