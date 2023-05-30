@@ -39,7 +39,7 @@ router.get('/connection', async (req, res) => {
     console.log("RETOUR: ", connectionData);
 
     let proofRequestData = await createProofRequest(connectionData);
-    console.log(proofRequestData.data); 
+    //console.log(proofRequestData.data); 
     //console.log("PROOF_REQUEST: ", proofRequestData); 
 
     // Methode à proscrire... 
@@ -82,7 +82,8 @@ async function createConnection(){
         console.log(response.data);
         return {
             "connection_id": response.data.connection_id,
-            "invitation_url": response.data.invitation_url 
+            "invitation_url": response.data.invitation_url, 
+            "recipient_keys": response.data.invitation.recipientKeys
             }
     } catch (error) {
         if(error.response){ 
@@ -106,21 +107,32 @@ async function createProofRequest(connectionData){
             "connection_id" : connectionData.connection_id,
             "trace" : "true", 
             "comment" : "Faire preuve d'attestation d'identite IQN'", 
-            "proof_request" : {
-                "name"    : "Preuve identite IQN", 
-                "version" : "1.0", 
-                "requested_attributes" : {
-                    "email": {
-                    "name": "email",
-                    "restrictions": [
-                        {
+            "request_presentations~attach": [
+                {
+                  "@id": "libindy-request-presentation-0",
+                  "mime-type": "application/json",
+                  "data": {
+                    "requested_attributes": {
+                      "email": {
+                        "name": "email",
+                        "restrictions": [
+                          {
                             "cred_def_id": "FUKLxsjrYSHgScLbHuPTo4:3:CL:31194:RegistreAccesVirtuelCQEN-0.1.22-flihp"
-                        }
-                    ]
-                    }
-                }, 
-                "requested_predicates" : {}
-            }
+                          }
+                        ]
+                      }
+                    },
+                    "requested_predicates": {}
+                  }
+                }
+              ],
+              "service": [
+                {
+                  "recipientKeys": [connectionData.recipient_keys],
+                  "routingKeys": [],
+                  "serviceEndpoint": "https://exp-port-e-consommateur-agent.apps.exp.openshift.cqen.ca"
+                }
+              ]
         });
 
     try{
