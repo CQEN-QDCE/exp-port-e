@@ -103,36 +103,24 @@ async function createProofRequest(connectionData){
 
     let body  = JSON.stringify(
         {
-            "auto_verify": true,
-            "connection_id" : connectionData.connection_id,
+            "connection_id" : "5261334c-d814-4b33-b3ef-bd4e5bdcf72c",
             "trace" : "true", 
             "comment" : "Faire preuve d'attestation d'identite IQN'", 
-            "request_presentations~attach": [
-                {
-                  "@id": "libindy-request-presentation-0",
-                  "mime-type": "application/json",
-                  "data": {
-                    "requested_attributes": {
-                      "email": {
-                        "name": "email",
-                        "restrictions": [
-                          {
-                            "cred_def_id": "FUKLxsjrYSHgScLbHuPTo4:3:CL:31194:RegistreAccesVirtuelCQEN-0.1.22-flihp"
-                          }
-                        ]
-                      }
-                    },
-                    "requested_predicates": {}
-                  }
-                }
-              ],
-              "service": [
-                {
-                  "recipientKeys": [connectionData.recipient_keys],
-                  "routingKeys": [],
-                  "serviceEndpoint": "https://exp-port-e-consommateur-agent.apps.exp.openshift.cqen.ca"
-                }
-              ]
+            "proof_request" : {
+                "name"    : "Preuve identite IQN", 
+                "version" : "1.0", 
+                "requested_attributes" : {
+                    "email": {
+                    "name": "email",
+                    "restrictions": [
+                        {
+                        "cred_def_id": "FUKLxsjrYSHgScLbHuPTo4:3:CL:31194:RegistreAccesVirtuelCQEN-0.1.22-flihp"
+                        }
+                    ]
+                    }
+                }, 
+                "requested_predicates" : {}
+            }
         });
 
     try{
