@@ -28,11 +28,7 @@ const config = {
   }
 };
 
-/**
- * 
- *      Routing de l'application express
- * 
- */
+// Routing de l'application express 
 
 router.get('/', (req, res) => {
     res.redirect('/index.html');
@@ -40,7 +36,7 @@ router.get('/', (req, res) => {
 
 router.get('/connection', async (req, res) => {
     let connectionData = await createConnection(); 
-    console.log("RETOUR CONNECTION: ", connectionData);
+    console.log("RETOUR: ", connectionData);
 
     let proofRequestData = await createProofRequest(connectionData);
     //console.log(proofRequestData.data); 
@@ -53,24 +49,14 @@ router.get('/connection', async (req, res) => {
     //res.send(nouvelleURL);
     */
 
-    let buff = new Buffer(proofRequestData);
-    let base64data = buff.toString('base64');
-   
-
-
-    let proofRequest = sendRequest(connectionData, base64data);
-    console.log(proofRequest); 
-    
-
     // Méthode à privilegier... 
-    /*let shorturl = await registrerShortURL(connectionData);
+    let shorturl = await registrerShortURL(connectionData);
     console.log(shorturl);
     res.setHeader("Content-Type", "text/plain");
-    res.send(shorturl);*/
+    res.send(shorturl);
      
 });
 
-/*   ---- faire netoyage
 router.get('/users', (req, res) =>{
     res.redirect('/adresseNonDispo.html'); 
 }); 
@@ -79,7 +65,7 @@ router.get('/users/:id', (req, res) => {
     const userId = req.params.id; 
     res.send(`Details of user ${userId}`);
 });
-  */
+  
 
 /**
  * Crée une nouvelle connexion à l'agent 
@@ -111,66 +97,54 @@ async function createConnection(){
     }
 }
 
-/**
- * Crée une nouvelle demande de preuve
- * @param {*} connectionData objet qui contient le connection_id, l'invitation_url et le recipient_keys
- * @returns une demande de preuve générée à faire présentation
- */
 async function createProofRequest(connectionData){
 
     axios.defaults.baseURL = BASE_URL;
 
     let body  = JSON.stringify(
-        {
-            "proof_request": {
-              "name": "TestTest",
-              "version": "1.0",
-              "requested_attributes": {
-                "attribute_referent_1": {
-                  "name": "email",
-                  "restrictions": [
-                    {
-                      "cred_def_id": "FUKLxsjrYSHgScLbHuPTo4:3:CL:31194:RegistreAccesVirtuelCQEN-0.1.22-flihp"
-                    }
-                  ]
-                }
-              },
-              "requested_predicates": {}
-            }
-          }
-    );
-        /*
+
         {
             "connection_id": connectionData.connection_id,
             "comment": "",
-            "request_presentations~attach": [
-                {
-                    "proof_request": {
-                        "name": "TestTest",
-                        "version": "1.0",
-                        "requested_attributes": {
-                            "attribute_referent_1": {
-                            "name": "email",
-                            "restrictions": [
-                                    {
-                                        "cred_def_id": "FUKLxsjrYSHgScLbHuPTo4:3:CL:31194:RegistreAccesVirtuelCQEN-0.1.22-flihp"
-                                    }
-                                ]
+            "proof_request": {
+                "name": "TestTest",
+                "version": "1.0",
+                "requested_attributes": {
+                    "attribute_referent_1": {
+                    "name": "email",
+                    "restrictions": [
+                            {
+                                "cred_def_id": "FUKLxsjrYSHgScLbHuPTo4:3:CL:31194:RegistreAccesVirtuelCQEN-0.1.22-flihp"
                             }
-                        },
-                        "requested_predicates": {}
+                        ]
                     }
-                }
-            ],
-            "service": [
-                {
-                  "recipientKeys": [connectionData.recipient_keys],
-                  "routingKeys": [],
-                  "serviceEndpoint": BASE_URL
-                }
-            ],    
-            "trace": true
-        } );*/
+                },
+                "requested_predicates": {}
+            },
+            "trace": false
+        });
+        /*    
+        {
+            "connection_id" : "5261334c-d814-4b33-b3ef-bd4e5bdcf72c",
+            "trace" : "true", 
+            "comment" : "Faire preuve d'attestation d'identite IQN'", 
+            "proof_request" : {
+                "name"    : "Preuve identite IQN", 
+                "version" : "1.0", 
+                "requested_attributes" : {
+                    "email": {
+                    "name": "email",
+                    "restrictions": [
+                        {
+                        "cred_def_id": "FUKLxsjrYSHgScLbHuPTo4:3:CL:31194:RegistreAccesVirtuelCQEN-0.1.22-flihp"
+                        }
+                    ]
+                    }
+                }, 
+                "requested_predicates" : {}
+            }
+        });*/
+
     try{
         const response = await axios.post(`${ENDPOINT_INVITATION}`, body, config);
         return response;
@@ -180,48 +154,6 @@ async function createProofRequest(connectionData){
     }
     
 }
-
-
-
-async function sendRequest(connectionData, base64data){
-
-    axios.defaults.baseURL = BASE_URL;
-
-    let proofBody = 
-    {
-        "@id": "ca17e6bc-9bff-411f-ab04-3fad4ff7e7ab",
-        "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/1.0/request-presentation",
-        "request_presentations~attach": [
-          {
-            "@id": "libindy-request-presentation-0",
-            "mime-type": "application/json",
-            "data": {
-              "base64": base64data
-            }
-          }
-        ],
-        "~service": [
-          {
-            "recipientKeys": [
-                connectionData.recipientKeys
-            ],
-            "routingKeys": null,
-            "serviceEndpoint": BASE_URL
-          }
-        ]
-      };
-
-    // Méthode à privilegier... 
-    let shorturl = await registrerShortURL(proofBody);
-    console.log(shorturl);
-    res.setHeader("Content-Type", "application/json");
-    res.send(shorturl);
-    
-}
-
-
-
-
 
 /**
  * Créé un short url à partir de l'URL de la demande de connexion avec aca-py, et ensuite la codifie 
