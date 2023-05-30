@@ -102,6 +102,28 @@ async function createProofRequest(connectionData){
     axios.defaults.baseURL = BASE_URL;
 
     let body  = JSON.stringify(
+
+        {
+            "connection_id": connectionData.connection_id,
+            "comment": "",
+            "proof_request": {
+                "name": "TestTest",
+                "version": "1.0",
+                "requested_attributes": {
+                    "attribute_referent_1": {
+                    "name": "email",
+                    "restrictions": [
+                            {
+                                "cred_def_id": "FUKLxsjrYSHgScLbHuPTo4:3:CL:31194:RegistreAccesVirtuelCQEN-0.1.22-flihp"
+                            }
+                        ]
+                    }
+                },
+                "requested_predicates": {}
+            },
+            "trace": false
+            });
+        /*    
         {
             "connection_id" : "5261334c-d814-4b33-b3ef-bd4e5bdcf72c",
             "trace" : "true", 
@@ -121,7 +143,7 @@ async function createProofRequest(connectionData){
                 }, 
                 "requested_predicates" : {}
             }
-        });
+        });*/
 
     try{
         const response = await axios.post(`${ENDPOINT_INVITATION}`, body, config);
