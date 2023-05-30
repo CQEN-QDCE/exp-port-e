@@ -18,7 +18,6 @@ const BASE_SHORT_URL      = process.env.BASE_SHORT_URL;
 const ENDPOINT_CONNECTION = process.env.ENDPOINT_CONNECTION;
 const ENDPOINT_INVITATION = process.env.ENDPOINT_INVITATION;
 const X_API_KEY           = process.env.X_API_KEY;
-const APP_PORT            = process.env.APP_PORT;
 
 // Configurer axios 
 const axios = require("axios");
@@ -40,21 +39,17 @@ router.get('/', (req, res) => {
 })
 
 router.get('/connection', async (req, res) => {
+
+    // Créé la connexion
     let connectionData = await createConnection(); 
     console.log("RETOUR: ", connectionData);
 
+    // Créé la demande de preuve /proof-request/send-request
     let proofRequestData = await createProofRequest(connectionData);
     //console.log(proofRequestData.data); 
     //console.log("PROOF_REQUEST: ", proofRequestData); 
 
-    // Methode à proscrire... 
-    /*let ci = connectionData.invitation_url.substring(connectionData.invitation_url.lastIndexOf('?')); 
-    let nouvelleURL = "didcomm://invite" + ci; 
-    console.log(nouvelleURL);
-    //res.send(nouvelleURL);
-    */
-
-    // Méthode à privilegier... 
+    // Génère le short url avec la sortie de la generation de la demande de preuve.
     let shorturl = await registrerShortURL(connectionData);
     console.log(shorturl);
     res.setHeader("Content-Type", "text/plain");
@@ -71,17 +66,7 @@ async function createConnection(){
 
     axios.defaults.baseURL = BASE_URL;
 
-    let invitationBody = 
-    {
-        "metadata": {},
-        "my_label": "Connexion Port-e",
-        "service_endpoint": BASE_URL
-    }
-
-
     try{
-        console.log("BASE_URL", BASE_URL); 
-        console.log("ENDPOINT_CONNECTION: ", ENDPOINT_CONNECTION);
         const response = await axios.post(`${ENDPOINT_CONNECTION}`, {}, config);
         console.log(response.data);
         return {
@@ -102,12 +87,16 @@ async function createConnection(){
     }
 }
 
+/**
+ * Créé une nouvelle proof-request, et execute l'endpoint send-request
+ * @param {*} connectionData 
+ * @returns 
+ */
 async function createProofRequest(connectionData){
 
     axios.defaults.baseURL = BASE_URL;
 
     let body  = JSON.stringify(
-
         {
             "connection_id" : "5261334c-d814-4b33-b3ef-bd4e5bdcf72c",
             "trace" : "true", 
@@ -127,59 +116,23 @@ async function createProofRequest(connectionData){
                 }, 
                 "requested_predicates" : {}
             }
-        });
-
-        /*
-        {
-            "connection_id": connectionData.connection_id,
-            "comment": "",
-            "proof_request": {
-                "name": "TestTest",
-                "version": "1.0",
-                "requested_attributes": {
-                    "attribute_referent_1": {
-                    "name": "email",
-                    "restrictions": [
-                            {
-                                "cred_def_id": "FUKLxsjrYSHgScLbHuPTo4:3:CL:31194:RegistreAccesVirtuelCQEN-0.1.22-flihp"
-                            }
-                        ]
-                    }
-                },
-                "requested_predicates": {}
-            },
-            "trace": false
-        });
-            
-        {
-            "connection_id" : "5261334c-d814-4b33-b3ef-bd4e5bdcf72c",
-            "trace" : "true", 
-            "comment" : "Faire preuve d'attestation d'identite IQN'", 
-            "proof_request" : {
-                "name"    : "Preuve identite IQN", 
-                "version" : "1.0", 
-                "requested_attributes" : {
-                    "email": {
-                    "name": "email",
-                    "restrictions": [
-                        {
-                        "cred_def_id": "FUKLxsjrYSHgScLbHuPTo4:3:CL:31194:RegistreAccesVirtuelCQEN-0.1.22-flihp"
-                        }
-                    ]
-                    }
-                }, 
-                "requested_predicates" : {}
-            }
-        });*/
+        }
+    );
 
     try{
         const response = await axios.post(`${ENDPOINT_INVITATION}`, body, config);
         return response;
     } catch(error){
         console.log("Erreur survenu de l'application..."); 
+        if(error.response){ 
+            console.log(error.response.statusText);
+        } else if(error.request){
+            console.log(error.request);
+        } else {
+            console.log("Erreur inconnu: ", error.message); 
+        }
         console.log(error);
     }
-    
 }
 
 /**
