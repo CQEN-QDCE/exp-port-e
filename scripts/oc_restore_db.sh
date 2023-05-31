@@ -7,19 +7,20 @@ DUMP_DIR=$2
 WALLET_POD=$(oc get pods -n $PROJECT_NAME --field-selector=status.phase=Running | grep wallet | awk '{print $1}')
 
 oc cp $DUMP_DIR/wallet.db ${WALLET_POD}:/tmp/wallet.db -n $PROJECT_NAME
-
 oc exec $WALLET_POD -n $PROJECT_NAME -- pg_restore --clean --if-exists -d aries_issuer "/tmp/wallet.db"
+oc exec $WALLET_POD -n $PROJECT_NAME -- rm /tmp/wallet.db
+
 
 # Restore Controller DB
 CONTROLLER_DB_POD=$(oc get pods -n $PROJECT_NAME --field-selector=status.phase=Running | grep controller-db | awk '{print $1}')
 
 oc cp $DUMP_DIR/controller-db.db ${CONTROLLER_DB_POD}:/tmp/controller-db.db -n $PROJECT_NAME
-
 oc exec $CONTROLLER_DB_POD -n $PROJECT_NAME -- pg_restore --clean --if-exists -d aries_issuer "/tmp/controller-db.db"
+oc exec $CONTROLLER_DB_POD -n $PROJECT_NAME -- rm /tmp/controller-db.db
 
 # Restore Backend DB
 BACKEND_DB_POD=$(oc get pods -n $PROJECT_NAME --field-selector=status.phase=Running | grep backend-db | awk '{print $1}')
 
 oc cp $DUMP_DIR/backend-db.db ${BACKEND_DB_POD}:/tmp/backend-db.db -n $PROJECT_NAME
-
 oc exec $BACKEND_DB_POD -n $PROJECT_NAME -- pg_restore --clean --if-exists -d porte "/tmp/backend-db.db"
+oc exec $BACKEND_DB_POD -n $PROJECT_NAME -- rm /tmp/backend-db.db

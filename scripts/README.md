@@ -8,7 +8,7 @@ Extrait une sauvegarde des bases de données d'un projet déployé dans Openshif
 # S'authentifier a la console oc
 oc login --token=[TOKEN_SESSION] --server=https://api.exp.openshift.cqen.ca:6443
 
-# Executer le script en passant le project Openshift en paramètre et le répertoie où déposer les fichiers de sauvegarde
+# Executer le script en passant le project Openshift en paramètre et le répertoire où déposer les fichiers de sauvegarde
 ./oc_dump_db.sh [Nom du project] [repertoire, nom du project par défaut]
 
 ```
