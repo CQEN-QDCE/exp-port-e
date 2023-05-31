@@ -54,7 +54,6 @@ router.get('/connection', async (req, res) => {
     console.log(shorturl);
     res.setHeader("Content-Type", "text/plain");
     res.send(shorturl);
-     
 });
   
 
@@ -106,12 +105,12 @@ async function createProofRequest(connectionData){
                 "version" : "1.0", 
                 "requested_attributes" : {
                     "email": {
-                    "name": "email",
-                    "restrictions": [
-                        {
-                        "cred_def_id": "FUKLxsjrYSHgScLbHuPTo4:3:CL:31194:RegistreAccesVirtuelCQEN-0.1.22-flihp"
-                        }
-                    ]
+                        "name": "email",
+                        "restrictions": [
+                            {
+                                "cred_def_id": "FUKLxsjrYSHgScLbHuPTo4:3:CL:29366:RegistreAccesVirtuelCQEN-0.1.2-flihp"
+                            }
+                        ]
                     }
                 }, 
                 "requested_predicates" : {}
