@@ -24,7 +24,8 @@ const axios = require("axios");
 axios.defaults.baseURL = BASE_URL;
 const config = {
   headers:{
-    "X-API-KEY": X_API_KEY
+    "X-API-KEY": X_API_KEY, 
+    "Content-type": "application/json"
   }
 };
 
@@ -95,7 +96,7 @@ async function createProofRequest(connectionData){
 
     axios.defaults.baseURL = BASE_URL;
 
-    let body  = JSON.stringify(
+    let body  =
         {
             "connection_id" : "5261334c-d814-4b33-b3ef-bd4e5bdcf72c",
             "trace" : "true", 
@@ -115,8 +116,7 @@ async function createProofRequest(connectionData){
                 }, 
                 "requested_predicates" : {}
             }
-        }
-    );
+        };
 
     try{
         console.log("================================================");
