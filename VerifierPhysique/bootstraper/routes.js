@@ -48,7 +48,7 @@ router.get('/connection', async (req, res) => {
     // Créé la demande de preuve /proof-request/send-request
     let proofRequestData = await createProofRequest(connectionData);
     //console.log(proofRequestData.data); 
-    //console.log("PROOF_REQUEST: ", proofRequestData); 
+    console.log("PROOF_REQUEST: ", proofRequestData); 
 
     // Génère le short url avec la sortie de la generation de la demande de preuve.
     let shorturl = await registrerShortURL(connectionData);
