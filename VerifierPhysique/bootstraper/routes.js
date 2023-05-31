@@ -119,6 +119,9 @@ async function createProofRequest(connectionData){
     );
 
     try{
+        console.log("================================================");
+        console.log("Coucou requete...");
+        console.log("================================================");
         const response = await axios.post(`${ENDPOINT_INVITATION}`, body, config);
         return response;
     } catch(error){
