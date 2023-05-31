@@ -1,61 +1,27 @@
+# Script utilitaires
 
+## oc_dump_db.sh
 
-## Realisation du backup d'une bd sans avoir à se connecter avec un autre pod
+Extrait une sauvegarde des bases de données d'un projet déployé dans Openshift via la console oc.
 
-Du portable vers le pod OpenShift: 
+```bash
+# S'authentifier a la console oc
+oc login --token=[TOKEN_SESSION] --server=https://api.exp.openshift.cqen.ca:6443
 
-oc rsync <repertoire-origine-local> <nom-du-pod>:<repertoire-destination-pod>
-
-Ex: oc rsync /Users/flihp/Downloads/fr_CA dolibarr-1-rqxcf:/var/www/html/langs
-
-Du pod OpenShift vers le portable: 
-
-oc rsync <nom-du-pod>:<repertoire-origine-pod> <repertoire-destination-local>
-
-Ex: oc rsync dolibarr-1-rqxcf:/var/www/html/langs/fr_CA .
-
-
-## Exécuter le backup 
-
-Créer un fichier d'environnement appelé `.env`, et définir les variables ci-dessous: 
+# Executer le script en passant le project Openshift en paramètre et le répertoie où déposer les fichiers de sauvegarde
+./oc_dump_db.sh [Nom du project] [repertoire, nom du project par défaut]
 
 ```
-DATABASE_NAME=
-DATABASE_PASSWORD=
-DATABASE_USER=
-DATABASE_HOST=
-DATABASE_PORT=
-```
 
-## Connexion a un pod et a une BD mongo
+## oc_restore_db.sh
 
-1 - Connecter au pod du mongo: 
-```
-oc exec -it <nom-pod-mongo> -- bash 
-```
+Restaure une sauvegarde des bases de données d'un projet déployé dans Openshift via la console oc.
 
-2 - Connecter à la BD, en passant les parametres: 
-```
-mongosh "mongodb://<host>:<port>" --username <nom-usager> --authenticationDatabase <nom-bd>  --password <mdp-bd>
-```
+```bash
+# S'authentifier a la console oc
+oc login --token=[TOKEN_SESSION] --server=https://api.exp.openshift.cqen.ca:6443
 
-**Syntaxe mongo**
+# Executer le script en passant le project Openshift en paramètre et le répertoire contant une sauvegarde
+./oc_restore_db.sh [Nom du project] [repertoire contenant sauvegarde]
 
 ```
-show collections
-
-db.movies.insertOne(
-   {
-     title: "The Favourite",
-     genres: [ "Drama", "History" ],
-     runtime: 121,
-     rated: "R",
-     year: 2018,
-     directors: [ "Yorgos Lanthimos" ],
-     cast: [ "Olivia Colman", "Emma Stone", "Rachel Weisz" ],
-     type: "movie"
-   }
- )
- 
-db.movies.find()
-``` 
