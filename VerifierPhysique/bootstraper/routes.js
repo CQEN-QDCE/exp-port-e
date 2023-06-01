@@ -44,17 +44,13 @@ router.get('/connection', async (req, res) => {
     // Créé la connexion
     let connectionData = await createConnection(); 
     console.log("RETOUR: ", connectionData);
-
-    // Créé la demande de preuve /proof-request/send-request
-    let proofRequestData = await createProofRequest(connectionData);
-    //console.log(proofRequestData.data); 
-    console.log("PROOF_REQUEST: ", proofRequestData); 
-
-    // Génère le short url avec la sortie de la generation de la demande de preuve.
     let shorturl = await registrerShortURL(connectionData);
     console.log(shorturl);
     res.setHeader("Content-Type", "text/plain");
-    res.send(shorturl);
+    res.send(shorturl);   
+
+    await pooling(connectionData.connection_id);
+
 });
   
 
@@ -87,54 +83,54 @@ async function createConnection(){
     }
 }
 
-/**
- * Créé une nouvelle proof-request, et execute l'endpoint send-request
- * @param {*} connectionData 
- * @returns 
- */
-async function createProofRequest(connectionData){
+async function pooling(connectionId){
+
+    console.log("pooling la connection_id : ", connectionId); 
+    let i = 0;
+ 
+    const intervalId = setInterval(async () => {
+        console.log(i);
+        let connStatus = await getConnectionStatus(connectionId);
+        console.log(connStatus.data);
+        i++;
+    }, 10000);
+
+    // Espera por algum tempo antes de cancelar o intervalo (se necessário)
+    await new Promise(resolve => setTimeout(resolve, 100000));
+    clearInterval(intervalId);
+
+    console.log("Fin du pooling");
+
+}
+
+
+async function getConnectionStatusy(connectionId){
+    console.log(connectionId);
+}
+
+async function getConnectionStatus(connectionId){
 
     axios.defaults.baseURL = BASE_URL;
 
-    let body  =
-        {
-            "connection_id" : "5261334c-d814-4b33-b3ef-bd4e5bdcf72c",
-            "trace" : "true", 
-            "comment" : "Faire preuve d'attestation d'identite IQN'", 
-            "proof_request" : {
-                "name"    : "Preuve identite IQN", 
-                "version" : "1.0", 
-                "requested_attributes" : {
-                    "email": {
-                        "name": "email",
-                        "restrictions": [
-                            {
-                                "cred_def_id": "FUKLxsjrYSHgScLbHuPTo4:3:CL:29366:RegistreAccesVirtuelCQEN-0.1.2-flihp"
-                            }
-                        ]
-                    }
-                }, 
-                "requested_predicates" : {}
-            }
-        };
-
     try{
-        console.log("================================================");
-        console.log("Coucou requete...");
-        console.log("================================================");
-        const response = await axios.post(`${ENDPOINT_INVITATION}`, body, config);
-        return response;
-    } catch(error){
-        console.log("Erreur survenu de l'application..."); 
-        if(error.response){ 
-            console.log(error.response.statusText);
-        } else if(error.request){
-            console.log(error.request);
-        } else {
-            console.log("Erreur inconnu: ", error.message); 
-        }
+        console.log("X-API-KEY: ", config);
+        const response= await axios({
+            method: 'get',
+            url: `${BASE_URL}/connections/${connectionId}`,
+            headers: {
+                'X-API-KEY': X_API_KEY,
+                'Content-Type': 'application/json' 
+            }
+        });
+        console.log(response.data);
+        return response.data;
+    } catch (error) {
+        console.log("error");
         console.log(error);
+        console.log(error.response.status);
+        console.log(error.response.statusText); 
     }
+
 }
 
 /**
@@ -154,7 +150,6 @@ async function registrerShortURL(connectionData){
     let didcommAddr = "didcomm://invite".concat(connectionData.invitation_url.substring(connectionData.invitation_url.indexOf('?'))); 
     // Créé le payload pour l'appel au shortener
     let payload = {
-        //"originalUrl": connectionData.invitation_url,
         "originalUrl": didcommAddr,
         "uniqueId": "", 
         "numberClicks": 0, 
@@ -163,7 +158,6 @@ async function registrerShortURL(connectionData){
 
     try{
         const response = await axios.post(`/v1/short-url`, payload, config); 
-        //let shortUrl = "didcomm://invite".concat(BASE_SHORT_URL.concat(response.data.uniqueId));
         let shortUrl = BASE_SHORT_URL.concat(response.data.uniqueId); 
         return shortUrl;
     } catch(error) {
