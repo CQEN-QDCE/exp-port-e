@@ -14,11 +14,6 @@ WALLET_POD=$(oc get pods -n $PROJECT_NAME --field-selector=status.phase=Running 
 
 oc exec $WALLET_POD -n $PROJECT_NAME -- pg_dump --format=custom aries_issuer > "${DUMP_DIR}/wallet.db"
 
-# Backup Controller DB
-CONTROLLER_DB_POD=$(oc get pods -n $PROJECT_NAME --field-selector=status.phase=Running | grep controller-db | awk '{print $1}')
-
-oc exec $CONTROLLER_DB_POD -n $PROJECT_NAME -- pg_dump --format=custom aries_issuer > "${DUMP_DIR}/controller-db.db"
-
 # Backup Backend DB
 BACKEND_DB_POD=$(oc get pods -n $PROJECT_NAME --field-selector=status.phase=Running | grep backend-db | awk '{print $1}')
 
