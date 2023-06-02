@@ -265,6 +265,12 @@ async function getProofRequestStatus(presentationExchangeId){
                 'Content-Type': 'application/json' 
             }
         });
+        console.log("STATUS DE LA PREUVE: ");
+        if(proofStatus.data.state == 'presentation_received'){
+
+        } else {
+            console.log(proofStatus.data);
+        }
         console.log(proofStatus.data);
         return proofStatus.data;
     } catch (error) {
