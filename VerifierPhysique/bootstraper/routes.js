@@ -46,7 +46,7 @@ router.get('/connection', async (req, res) => {
 
     // Créé la connexion
     let connectionData = await createConnection(); 
-    console.log("RETOUR: ", connectionData);
+    //console.log("RETOUR: ", connectionData);
 
     //res.setHeader("Content-Type", "application/json");
     let shorturl = await registrerShortURL(connectionData);
@@ -79,7 +79,7 @@ async function createConnection(){
 
     try{
         const response = await axios.post(`${ENDPOINT_CONNECTION}`, {}, config);
-        console.log(response.data);
+        //console.log(response.data);
         return {
             "connection_id": response.data.connection_id,
             "invitation_url": response.data.invitation_url, 
@@ -104,14 +104,14 @@ async function createConnection(){
  */
 async function poolingConnection(connectionId){
 
-    console.log("pooling la connection_id : ", connectionId); 
+    console.log("Pooling la connection_id : ", connectionId); 
 
     let i = 0;
 
     const connIntervalId = setInterval(async () => {
         console.log(i);
         let connStatus = await getConnectionStatus(connectionId);
-        console.log(connStatus.state);
+        //console.log(connStatus.state);
 
         if (connStatus.state == 'response'){
             clearInterval(connIntervalId);
@@ -155,7 +155,9 @@ async function getConnectionStatus(connectionId){
                 'Content-Type': 'application/json' 
             }
         });
-        console.log(response.data);
+        //console.log(response.data);
+        
+        
         // const response = await axios.get(`/connections/${connectionId}`, {}, `X-API-KEY": ${X_API_KEY}`);
         //console.log(response.data);
         /*return {
@@ -236,11 +238,13 @@ async function sendProofRequest(connectionId){
 
 async function poolingProofRequest(presentationExchangeId){
 
+    console.log("Pooling la presentationExchangeId: ", presentationExchangeId); 
+
     let i = 0;
     const proofIntervalId = setInterval(async () => {
         console.log(`PROOF_REQUEST: [${presentationExchangeId}] [${i}]` );
         let proofStatus = await getProofRequestStatus(presentationExchangeId);
-        console.log(proofStatus.state);
+        //console.log(proofStatus.state);
 
         if (proofStatus.state == 'response'){    // a changer le contenu de cet if
             clearInterval(intervalId);
@@ -268,10 +272,10 @@ async function getProofRequestStatus(presentationExchangeId){
         console.log("STATUS DE LA PREUVE: ");
         if(proofStatus.data.state == 'presentation_received'){   
             recupereDonneesProof(presentationExchangeId);
-        } else {
+        } /*else {
             console.log(proofStatus.data);
-        }
-        console.log(proofStatus.data);
+        }*/
+        //console.log(proofStatus.data);
         return proofStatus.data;
     } catch (error) {
         console.log("error");
