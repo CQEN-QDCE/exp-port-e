@@ -39,11 +39,16 @@ router.get('/', (req, res) => {
     res.redirect('/index.html');
 })
 
+/**
+ * Endpoint créé nouvelle connexion et demande de preuve. 
+ */
 router.get('/connection', async (req, res) => {
 
     // Créé la connexion
     let connectionData = await createConnection(); 
     console.log("RETOUR: ", connectionData);
+
+    //res.setHeader("Content-Type", "application/json");
     let shorturl = await registrerShortURL(connectionData);
     console.log(shorturl);
     res.setHeader("Content-Type", "text/plain");
@@ -53,6 +58,16 @@ router.get('/connection', async (req, res) => {
 
 });
   
+
+/**
+ * ==============================
+ *   
+ *    Methodes d'affaire 
+ * 
+ * ==============================
+ */
+
+
 
 /**
  * Crée une nouvelle connexion à l'agent 
@@ -86,27 +101,33 @@ async function createConnection(){
 async function pooling(connectionId){
 
     console.log("pooling la connection_id : ", connectionId); 
+
     let i = 0;
- 
+
     const intervalId = setInterval(async () => {
         console.log(i);
         let connStatus = await getConnectionStatus(connectionId);
-        console.log(connStatus.data);
+        console.log(connStatus.state);
         i++;
     }, 10000);
 
     // Espera por algum tempo antes de cancelar o intervalo (se necessário)
-    await new Promise(resolve => setTimeout(resolve, 100000));
+    await new Promise(resolve => setTimeout(resolve, 30000000));
+
     clearInterval(intervalId);
 
+/*
+    let connectionStatus = setTimeout(getConnectionStatus, 10000, connectionId);
+    await console.log(connectionStatus.data);
+    if(connectionStatus.data.state != "invitation"){
+        pooling(connectionId);
+    }
+*/
     console.log("Fin du pooling");
+    //console.log(await getConnectionStatus(connectionId));
 
 }
 
-
-async function getConnectionStatusy(connectionId){
-    console.log(connectionId);
-}
 
 async function getConnectionStatus(connectionId){
 
@@ -123,12 +144,28 @@ async function getConnectionStatus(connectionId){
             }
         });
         console.log(response.data);
+        // const response = await axios.get(`/connections/${connectionId}`, {}, `X-API-KEY": ${X_API_KEY}`);
+        //console.log(response.data);
+        /*return {
+            "connection_id": response.data.connection_id,
+            "invitation_url": response.data.invitation_url, 
+            "recipient_keys": response.data.invitation.recipientKeys, 
+            "service_endpoint": response.data.invitation.serviceEndpoint
+        } */
         return response.data;
     } catch (error) {
         console.log("error");
         console.log(error);
         console.log(error.response.status);
         console.log(error.response.statusText); 
+        if(error.response){ 
+            //console.log(error.response.statusText);
+        } else if(error.request){
+            //console.log(error.request);
+        } else {
+          //  console.log("Erreur inconnu: ", error.message); 
+        }
+        //console.log(error);
     }
 
 }
@@ -150,6 +187,7 @@ async function registrerShortURL(connectionData){
     let didcommAddr = "didcomm://invite".concat(connectionData.invitation_url.substring(connectionData.invitation_url.indexOf('?'))); 
     // Créé le payload pour l'appel au shortener
     let payload = {
+        //"originalUrl": connectionData.invitation_url,
         "originalUrl": didcommAddr,
         "uniqueId": "", 
         "numberClicks": 0, 
@@ -158,11 +196,46 @@ async function registrerShortURL(connectionData){
 
     try{
         const response = await axios.post(`/v1/short-url`, payload, config); 
+        //let shortUrl = "didcomm://invite".concat(BASE_SHORT_URL.concat(response.data.uniqueId));
         let shortUrl = BASE_SHORT_URL.concat(response.data.uniqueId); 
         return shortUrl;
     } catch(error) {
         console.log(error);
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 module.exports = router;
