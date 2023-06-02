@@ -218,7 +218,7 @@ async function sendProofRequest(connectionId){
         const response = await axios.post(`${ENDPOINT_INVITATION}`, body, config);
         console.log("PROOF-REQUEST: ", response.data);
         console.log("PRES EX ID: ", response.data.presentation_exchange_id);
-        await poolingProofRequest(presentationExchangeId); 
+        await poolingProofRequest(response.data.presentation_exchange_id); 
         //return response;
     } catch(error){
         console.log("Erreur de generation de la proof-request..."); 
