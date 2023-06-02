@@ -267,7 +267,7 @@ async function getProofRequestStatus(presentationExchangeId){
         });
         console.log("STATUS DE LA PREUVE: ");
         if(proofStatus.data.state == 'presentation_received'){   
-            console.log(proofStatus);
+            recupereDonneesProof(presentationExchangeId);
         } else {
             console.log(proofStatus.data);
         }
@@ -290,6 +290,35 @@ async function getProofRequestStatus(presentationExchangeId){
 }
 
 
+async function recupereDonneesProof(presentationExchangeId){
+
+    axios.defaults.baseURL = BASE_URL;
+
+    try{
+        const proofData = await axios({
+            method: 'post',
+            url: `${BASE_URL}/present-proof/records/${presentationExchangeId}/verify-presentation`,
+            headers: {
+                'X-API-KEY': X_API_KEY,
+                'Content-Type': 'application/json' 
+            }
+        });
+        console.log("STATUS DE LA PREUVE: ");
+        console.log(proofData); 
+    } catch (error) {
+        console.log("error");
+        console.log(error);
+        console.log(error.response.status);
+        console.log(error.response.statusText); 
+        if(error.response){ 
+            //console.log(error.response.statusText);
+        } else if(error.request){
+            //console.log(error.request);
+        } else {
+          //  console.log("Erreur inconnu: ", error.message); 
+        }
+    }
+}
 
 
 
