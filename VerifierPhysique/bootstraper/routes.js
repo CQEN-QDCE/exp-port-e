@@ -108,13 +108,13 @@ async function poolingConnection(connectionId){
 
     let i = 0;
 
-    const intervalId = setInterval(async () => {
+    const connIntervalId = setInterval(async () => {
         console.log(i);
         let connStatus = await getConnectionStatus(connectionId);
         console.log(connStatus.state);
 
         if (connStatus.state == 'response'){
-            clearInterval(intervalId);
+            clearInterval(connIntervalId);
             await sendProofRequest(connectionId);
         }
         i++;
@@ -147,7 +147,6 @@ async function getConnectionStatus(connectionId){
     axios.defaults.baseURL = BASE_URL;
 
     try{
-        console.log("X-API-KEY: ", config);
         const response= await axios({
             method: 'get',
             url: `${BASE_URL}/connections/${connectionId}`,
@@ -217,13 +216,12 @@ async function sendProofRequest(connectionId){
 
     try{
         const response = await axios.post(`${ENDPOINT_INVITATION}`, body, config);
-        //console.log("PROOF_REQUEST: ", response);
         console.log("PROOF-REQUEST: ", response.data);
         console.log("PRES EX ID: ", response.data.presentation_exchange_id);
+        await poolingProofRequest(presentationExchangeId); 
         //return response;
     } catch(error){
         console.log("Erreur de generation de la proof-request..."); 
-        
         if(error.response){ 
             console.log(error.response.statusText);
         } else if(error.request){
@@ -236,15 +234,16 @@ async function sendProofRequest(connectionId){
 }
 
 
-async function poolingProofRequest(){
-    const intervalId = setInterval(async () => {
-        console.log(i);
-        let connStatus = await getConnectionStatus(connectionId);
-        console.log(connStatus.state);
+async function poolingProofRequest(presentationExchangeId){
 
-        if (connStatus.state == 'response'){
+    const proofIntervalId = setInterval(async () => {
+        console.log(`PROOF_REQUEST: [${presentationExchangeId}] [${i}]` );
+        let proofState = await getProofRequestStatus(presentationExchangeId);
+        console.log(proofStatus.state);
+
+        if (proofStatus.state == 'response'){    // a changer le contenu de cet if
             clearInterval(intervalId);
-            await sendProofRequest(connectionId);
+            await sendProofRequest(proofIntervalId);
         }
         i++;
     }, 10000);
@@ -252,6 +251,36 @@ async function poolingProofRequest(){
 }
 
 
+async function getProofRequestStatus(presentationExchangeId){
+
+    axios.defaults.baseURL = BASE_URL;
+
+    try{
+        const proofStatus = await axios({
+            method: 'get',
+            url: `${BASE_URL}/present-proof/records/${presentationExchangeId}`,
+            headers: {
+                'X-API-KEY': X_API_KEY,
+                'Content-Type': 'application/json' 
+            }
+        });
+        console.log(proofStatus.data);
+        return proofStatus.data;
+    } catch (error) {
+        console.log("error");
+        console.log(error);
+        console.log(error.response.status);
+        console.log(error.response.statusText); 
+        if(error.response){ 
+            //console.log(error.response.statusText);
+        } else if(error.request){
+            //console.log(error.request);
+        } else {
+          //  console.log("Erreur inconnu: ", error.message); 
+        }
+    }
+
+}
 
 
 
