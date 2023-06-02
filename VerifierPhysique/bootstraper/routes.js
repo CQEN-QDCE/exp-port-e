@@ -266,8 +266,8 @@ async function getProofRequestStatus(presentationExchangeId){
             }
         });
         console.log("STATUS DE LA PREUVE: ");
-        if(proofStatus.data.state == 'presentation_received'){
-
+        if(proofStatus.data.state == 'presentation_received'){   
+            console.log(proofStatus);
         } else {
             console.log(proofStatus.data);
         }
