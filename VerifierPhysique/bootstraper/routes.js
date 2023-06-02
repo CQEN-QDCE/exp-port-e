@@ -54,7 +54,7 @@ router.get('/connection', async (req, res) => {
     res.setHeader("Content-Type", "text/plain");
     res.send(shorturl);   
 
-    await pooling(connectionData.connection_id);
+    await poolingConnection(connectionData.connection_id);
 
 });
   
@@ -98,7 +98,11 @@ async function createConnection(){
     }
 }
 
-async function pooling(connectionId){
+/**
+ * Faire le pooling de la connexion qui a été envoyée au client. Une fois que le 
+ * @param {*} connectionId 
+ */
+async function poolingConnection(connectionId){
 
     console.log("pooling la connection_id : ", connectionId); 
 
@@ -108,13 +112,18 @@ async function pooling(connectionId){
         console.log(i);
         let connStatus = await getConnectionStatus(connectionId);
         console.log(connStatus.state);
+
+        if (connStatus.state == 'response'){
+            clearInterval(intervalId);
+            await sendProofRequest(connectionId);
+        }
         i++;
     }, 10000);
 
     // Espera por algum tempo antes de cancelar o intervalo (se necessário)
-    await new Promise(resolve => setTimeout(resolve, 30000000));
+    // await new Promise(resolve => setTimeout(resolve, 30000000));
 
-    clearInterval(intervalId);
+    // clearInterval(intervalId);
 
 /*
     let connectionStatus = setTimeout(getConnectionStatus, 10000, connectionId);
@@ -128,7 +137,11 @@ async function pooling(connectionId){
 
 }
 
-
+/**
+ * 
+ * @param {*} connectionId 
+ * @returns 
+ */
 async function getConnectionStatus(connectionId){
 
     axios.defaults.baseURL = BASE_URL;
@@ -170,6 +183,80 @@ async function getConnectionStatus(connectionId){
 
 }
 
+
+/**
+ * 
+ * @param {*} connectionId 
+ * @returns 
+ */
+async function sendProofRequest(connectionId){
+
+    axios.defaults.baseURL = BASE_URL;
+
+    let body  =
+        {
+            "connection_id" : connectionId,
+            "trace" : "true", 
+            "comment" : "Faire preuve d'attestation d'identite IQN'", 
+            "proof_request" : {
+                "name"    : "Preuve identite IQN", 
+                "version" : "1.0", 
+                "requested_attributes" : {
+                    "email": {
+                        "name": "email",
+                        "restrictions": [
+                            {
+                                "cred_def_id": "FUKLxsjrYSHgScLbHuPTo4:3:CL:29366:RegistreAccesVirtuelCQEN-0.1.2-flihp"
+                            }
+                        ]
+                    }
+                }, 
+                "requested_predicates" : {}
+            }
+        };
+
+    try{
+        const response = await axios.post(`${ENDPOINT_INVITATION}`, body, config);
+        console.log("PROOF_REQUEST: ", response);
+        //return response;
+    } catch(error){
+        console.log("Erreur de generation de la proof-request..."); 
+        
+        if(error.response){ 
+            console.log(error.response.statusText);
+        } else if(error.request){
+            console.log(error.request);
+        } else {
+            console.log("Erreur inconnu: ", error.message); 
+        }
+        console.log(error);
+    }
+}
+
+
+async function poolingProofRequest(){
+    const intervalId = setInterval(async () => {
+        console.log(i);
+        let connStatus = await getConnectionStatus(connectionId);
+        console.log(connStatus.state);
+
+        if (connStatus.state == 'response'){
+            clearInterval(intervalId);
+            await sendProofRequest(connectionId);
+        }
+        i++;
+    }, 10000);
+
+}
+
+
+
+
+
+
+
+
+
 /**
  * Créé un short url à partir de l'URL de la demande de connexion avec aca-py, et ensuite la codifie 
  * dans le format compatible avec le deeplink pour le portefeuille. L'url qui sera retournée 
@@ -203,39 +290,5 @@ async function registrerShortURL(connectionData){
         console.log(error);
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 module.exports = router;
