@@ -239,7 +239,7 @@ async function poolingProofRequest(presentationExchangeId){
     let i = 0;
     const proofIntervalId = setInterval(async () => {
         console.log(`PROOF_REQUEST: [${presentationExchangeId}] [${i}]` );
-        let proofState = await getProofRequestStatus(presentationExchangeId);
+        let proofStatus = await getProofRequestStatus(presentationExchangeId);
         console.log(proofStatus.state);
 
         if (proofStatus.state == 'response'){    // a changer le contenu de cet if
