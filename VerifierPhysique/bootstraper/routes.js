@@ -35,25 +35,29 @@ const config = {
  * 
  */
 
+/**
+ * Endpoint racine. Retourne page d'accueil.
+ */
 router.get('/', (req, res) => {
     res.redirect('/index.html');
 })
 
 /**
- * Endpoint créé nouvelle connexion et demande de preuve. 
+ * Endpoint pour créér nouvelle connexion et demande de preuve. 
  */
 router.get('/connection', async (req, res) => {
 
-    // Créé la connexion
+    // Créé l'invitation à la connexion
     let connectionData = await createConnection(); 
-    //console.log("RETOUR: ", connectionData);
 
-    //res.setHeader("Content-Type", "application/json");
+    // Créé le short url de l'invitation de la connexion et 
+    // l'envoie au consommateur physique
     let shorturl = await registrerShortURL(connectionData);
-    console.log(shorturl);
+    console.log("Invitation à connexion: ", shorturl);
     res.setHeader("Content-Type", "text/plain");
     res.send(shorturl);   
 
+    // Réealise le pooling de l'établissement de la connexion
     await poolingConnection(connectionData.connection_id);
 
 });
@@ -68,7 +72,6 @@ router.get('/connection', async (req, res) => {
  */
 
 
-
 /**
  * Crée une nouvelle connexion à l'agent 
  * @returns Le connection_id et l'invitation_url de la connexion.
@@ -79,7 +82,7 @@ async function createConnection(){
 
     try{
         const response = await axios.post(`${ENDPOINT_CONNECTION}`, {}, config);
-        //console.log(response.data);
+        console.log("connection_id: ", response.data.connection_id);
         return {
             "connection_id": response.data.connection_id,
             "invitation_url": response.data.invitation_url, 
@@ -104,35 +107,23 @@ async function createConnection(){
  */
 async function poolingConnection(connectionId){
 
-    console.log("Pooling la connection_id : ", connectionId); 
+    console.log("[poolingConnection] Pooling la connection_id : ", connectionId); 
 
     let i = 0;
 
     const connIntervalId = setInterval(async () => {
-        console.log(i);
+        console.log(`[poolingConnection] connectionId: ${connectionId}, iteration: (${i})`);
         let connStatus = await getConnectionStatus(connectionId);
         //console.log(connStatus.state);
 
         if (connStatus.state == 'response'){
+            console.log(`[poolingConnection] Connexion ${connectionId} acceptée.`);
             clearInterval(connIntervalId);
             await sendProofRequest(connectionId);
         }
         i++;
     }, 10000);
-
-    // Espera por algum tempo antes de cancelar o intervalo (se necessário)
-    // await new Promise(resolve => setTimeout(resolve, 30000000));
-
-    // clearInterval(intervalId);
-
-/*
-    let connectionStatus = setTimeout(getConnectionStatus, 10000, connectionId);
-    await console.log(connectionStatus.data);
-    if(connectionStatus.data.state != "invitation"){
-        pooling(connectionId);
-    }
-*/
-    console.log("Fin du pooling");
+    console.log("[poolingConnection] Fin du pooling");
     //console.log(await getConnectionStatus(connectionId));
 
 }
@@ -143,7 +134,7 @@ async function poolingConnection(connectionId){
  * @returns 
  */
 async function getConnectionStatus(connectionId){
-
+    console.log(`[getConnectionStatus] ${connectionId}`)
     axios.defaults.baseURL = BASE_URL;
 
     try{
@@ -155,33 +146,17 @@ async function getConnectionStatus(connectionId){
                 'Content-Type': 'application/json' 
             }
         });
-        //console.log(response.data);
-        
-        
-        // const response = await axios.get(`/connections/${connectionId}`, {}, `X-API-KEY": ${X_API_KEY}`);
-        //console.log(response.data);
-        /*return {
-            "connection_id": response.data.connection_id,
-            "invitation_url": response.data.invitation_url, 
-            "recipient_keys": response.data.invitation.recipientKeys, 
-            "service_endpoint": response.data.invitation.serviceEndpoint
-        } */
         return response.data;
     } catch (error) {
-        console.log("error");
-        console.log(error);
-        console.log(error.response.status);
-        console.log(error.response.statusText); 
+        
         if(error.response){ 
-            //console.log(error.response.statusText);
+            console.log("[getConnectionStatus] " , error.response.statusText);
         } else if(error.request){
-            //console.log(error.request);
+            console.log("[getConnectionStatus] ", error.request);
         } else {
-          //  console.log("Erreur inconnu: ", error.message); 
+          console.log("[getConnectionStatus] Erreur inconnu: ", error.message); 
         }
-        //console.log(error);
     }
-
 }
 
 
@@ -192,6 +167,7 @@ async function getConnectionStatus(connectionId){
  */
 async function sendProofRequest(connectionId){
 
+    console.log(`[sendProofRequest] ${connectionId}`)
     axios.defaults.baseURL = BASE_URL;
 
     let body  =
@@ -218,8 +194,9 @@ async function sendProofRequest(connectionId){
 
     try{
         const response = await axios.post(`${ENDPOINT_INVITATION}`, body, config);
-        console.log("PROOF-REQUEST: ", response.data);
-        console.log("PRES EX ID: ", response.data.presentation_exchange_id);
+        console.log("[sendProofRequest] demande de preuve envoyée")
+        //console.log("PROOF-REQUEST: ", response.data);
+        //console.log("PRES EX ID: ", response.data.presentation_exchange_id);
         await poolingProofRequest(response.data.presentation_exchange_id); 
         //return response;
     } catch(error){
@@ -238,15 +215,16 @@ async function sendProofRequest(connectionId){
 
 async function poolingProofRequest(presentationExchangeId){
 
-    console.log("Pooling la presentationExchangeId: ", presentationExchangeId); 
+    console.log("[poolingProofRequest] Pooling la presentationExchangeId: ", presentationExchangeId); 
 
     let i = 0;
     const proofIntervalId = setInterval(async () => {
-        console.log(`PROOF_REQUEST: [${presentationExchangeId}] [${i}]` );
+        console.log(`[poolingProofRequest] PROOF_REQUEST: [${presentationExchangeId}] [${i}]` );
         let proofStatus = await getProofRequestStatus(presentationExchangeId);
         //console.log(proofStatus.state);
 
-        if (proofStatus.state == 'response'){    // a changer le contenu de cet if
+        if (proofStatus.state == 'response'){    
+            console.log(`[poolingProofRequest] demande de preuve présentée par l'usager`)
             clearInterval(intervalId);
             await sendProofRequest(proofIntervalId);
         }
