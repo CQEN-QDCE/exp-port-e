@@ -269,7 +269,7 @@ async function getProofRequestStatus(presentationExchangeId){
                 'Content-Type': 'application/json' 
             }
         });
-        console.log("STATUS DE LA PREUVE: ");
+        console.log(" DE LA PREUVE: ");
         if(proofStatus.data.state == 'presentation_received'){   
             recupereDonneesProof(presentationExchangeId);
         } /*else {
@@ -307,8 +307,9 @@ async function recupereDonneesProof(presentationExchangeId){
                 'Content-Type': 'application/json' 
             }
         });
-        console.log("STATUS DE LA PREUVE: ");
-        console.log(proofData); 
+        console.log("DONNEES DE LA PREUVE: ");
+        console.log(proofData.data.presentation.requested_proof.revealed_attrs.email.raw); 
+        
     } catch (error) {
         console.log("error");
         console.log(error);
