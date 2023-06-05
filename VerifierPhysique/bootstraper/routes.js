@@ -53,7 +53,7 @@ router.get('/connection', async (req, res) => {
     // Créé le short url de l'invitation de la connexion et 
     // l'envoie au consommateur physique
     let shorturl = await registrerShortURL(connectionData);
-    console.log("Invitation à connexion: ", shorturl);
+    console.log("[/connection] Invitation à connexion: ", shorturl);
     res.setHeader("Content-Type", "text/plain");
     res.send(shorturl);   
 
@@ -82,6 +82,7 @@ async function createConnection(){
     axios.defaults.baseURL = BASE_URL;
 
     try{
+        console.log(`[createConnection] GET ${BASE_URL}/connections/create-invitation HTTP/1.1`);
         const response = await axios.post(`${ENDPOINT_CONNECTION}`, {}, config);
         console.log("[createConnection] connection_id: ", response.data.connection_id);
         return {
@@ -142,6 +143,7 @@ async function getConnectionStatus(connectionId){
     axios.defaults.baseURL = BASE_URL;
 
     try{
+        console.log(`[getConnectionStatus] GET ${baseURL}/connections/${connectionId} HTTP/1.1`);
         const response= await axios({
             method: 'get',
             url: `${BASE_URL}/connections/${connectionId}`,
@@ -202,6 +204,7 @@ async function sendProofRequest(connectionId){
         };
 
     try{
+        console.log(`[sendProofRequest] POST ${BASE_URL}/${ENDPOINT_INVITATION} HTTP/1.1`);
         const response = await axios.post(`${ENDPOINT_INVITATION}`, body, config);
         console.log("[sendProofRequest] Demande de preuve envoyée")
         console.log("[sendProofRequest] PROOF-REQUEST: ", response.data);
@@ -246,9 +249,7 @@ async function poolingProofRequest(presentationExchangeId, connectionId){
         }
         i++;
     }, 10000);
-
 }
-
 
 /**
  * 
@@ -260,6 +261,7 @@ async function getProofRequestStatus(presentationExchangeId){
     axios.defaults.baseURL = BASE_URL;
 
     try{
+        console.log(`[getProofPresentationStatus] GET ${BASE_URL}/present-proof/records/${presentationExchangeId} HTTP/1.1`)
         const proofStatus = await axios({
             method: 'get',
             url: `${BASE_URL}/present-proof/records/${presentationExchangeId}`,
@@ -302,6 +304,7 @@ async function recupereDonneesProof(presentationExchangeId){
     axios.defaults.baseURL = BASE_URL;
 
     try{
+        console.log(`[recuperaDonneesProof] GET ${BASE_URL}/present-proof/records/${presentationExchangeId}/verify-presentation`)
         const proofData = await axios({
             method: 'post',
             url: `${BASE_URL}/present-proof/records/${presentationExchangeId}/verify-presentation`,
@@ -358,6 +361,7 @@ async function registrerShortURL(connectionData){
     };
 
     try{
+        console.log(`[registerShortUrl] POST ${BASE_SHORT_URL}//v1/short-url`)
         const response = await axios.post(`/v1/short-url`, payload, config); 
         //let shortUrl = "didcomm://invite".concat(BASE_SHORT_URL.concat(response.data.uniqueId));
         let shortUrl = BASE_SHORT_URL.concat(response.data.uniqueId); 
