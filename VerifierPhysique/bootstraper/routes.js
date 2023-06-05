@@ -268,7 +268,6 @@ async function getProofRequestStatus(presentationExchangeId){
                 'Content-Type': 'application/json' 
             }
         });
-        console.log(" DE LA PREUVE: ");
         if(proofStatus.data.state == 'presentation_received'){   
             recupereDonneesProof(presentationExchangeId);
         } /*else {
