@@ -121,7 +121,7 @@ async function poolingConnection(connectionId){
     const connIntervalId = setInterval(async () => {
         console.log(`[poolingConnection] connectionId: ${connectionId}, iteration: (${i})`);
         let connStatus = await getConnectionStatus(connectionId);
-        //console.log(`[poolingConnection] connectionId: ${connectionId}, connStatus.state: (${connStatus.state})`);
+        console.log(`[poolingConnection] connectionId: ${connectionId}, connStatus.state: (${connStatus.state})`);
 
         if (connStatus.state == 'response'){
             console.log(`[poolingConnection] ===>>> Connexion ${connectionId} acceptée.`);
@@ -143,7 +143,7 @@ async function getConnectionStatus(connectionId){
     axios.defaults.baseURL = BASE_URL;
 
     try{
-        console.log(`[getConnectionStatus] GET ${baseURL}/connections/${connectionId} HTTP/1.1`);
+        console.log(`[getConnectionStatus] GET ${BASE_URL}/connections/${connectionId} HTTP/1.1`);
         const response= await axios({
             method: 'get',
             url: `${BASE_URL}/connections/${connectionId}`,
