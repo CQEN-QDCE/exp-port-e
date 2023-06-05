@@ -123,8 +123,8 @@ async function poolingConnection(connectionId){
         let connStatus = await getConnectionStatus(connectionId);
         console.log(`[poolingConnection] connectionId: ${connectionId}, connStatus.state: (${connStatus.state})`);
 
-        if (connStatus.state == 'response'){
-            console.log(`[poolingConnection] ===>>> Connexion ${connectionId} acceptée.`);
+        if (connStatus.state == 'response' || connStatus.state == 'active') {
+            console.log(`[poolingConnection] ===>>> Connexion ${connectionId} acceptee.`);
             clearInterval(connIntervalId);
             await sendProofRequest(connectionId);
         }
@@ -206,7 +206,7 @@ async function sendProofRequest(connectionId){
     try{
         console.log(`[sendProofRequest] POST ${BASE_URL}/${ENDPOINT_INVITATION} HTTP/1.1`);
         const response = await axios.post(`${ENDPOINT_INVITATION}`, body, config);
-        console.log("[sendProofRequest] Demande de preuve envoyée")
+        console.log("[sendProofRequest] Demande de preuve envoyee")
         console.log("[sendProofRequest] PROOF-REQUEST: ", response.data);
         //console.log("PRES EX ID: ", response.data.presentation_exchange_id);
         await poolingProofRequest(response.data.presentation_exchange_id, connectionId); 
@@ -242,7 +242,7 @@ async function poolingProofRequest(presentationExchangeId, connectionId){
         let proofStatus = await getProofRequestStatus(presentationExchangeId);
 
         if (proofStatus.state == 'response'){    
-            console.log(`[poolingProofRequest] demande de preuve présentée par l'usager`)
+            console.log(`[poolingProofRequest] demande de preuve présentee par l'usager`)
             clearInterval(proofIntervalId);
 
            // Aller checker les inforamations d'accès dans la base de donnés
