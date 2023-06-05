@@ -199,7 +199,7 @@ async function sendProofRequest(connectionId){
                 }, 
                 "requested_predicates" : {}
             }
-        };response
+        };
 
     try{
         const response = await axios.post(`${ENDPOINT_INVITATION}`, body, config);
