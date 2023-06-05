@@ -24,4 +24,4 @@ fp-info-cache
 
 *.old
 
-requests.http
+*.http
