@@ -14,7 +14,7 @@
 // ----------------------------
 
 // Mettre just l'addresse base de l'URL qu'on veut se connecter.
-#define HOST_ADDRESS "exp-port-e-invitant.apps.exp.openshift.cqen.ca"
+#define HOST_ADDRESS "https://exp-port-e-invitant.apps.exp.openshift.cqen.ca"
 
 // Le reste de l'adresse qui vient après l'URL de base
 #define ENDPOINT "/connection"
