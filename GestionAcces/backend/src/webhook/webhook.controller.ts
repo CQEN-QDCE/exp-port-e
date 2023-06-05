@@ -42,6 +42,7 @@ export class WebHookController {
                 attestationEmise = await this.attestationEmiseService.findByEmail(nouvelleAttestationEmise.email);
             }
             if (attestationEmise) {
+                console.log('Attestation déjà présente');
                 skipNotification = true;
                 attestationEmise.time = nouvelleAttestationEmise.time;
                 attestationEmise.connectionId = nouvelleAttestationEmise.connectionId;
@@ -54,7 +55,7 @@ export class WebHookController {
                 attestationEmise = await this.attestationEmiseService.create(nouvelleAttestationEmise);
             }
        }
-
+       console.log('Skip Notification');
        if (!skipNotification) await this.webhookNotifier.notify(topic, payload);
     }
 
