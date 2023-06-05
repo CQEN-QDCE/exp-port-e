@@ -22,8 +22,7 @@ export class WebHookController {
         console.log('handle webhook');
         console.log('topic: ' + topic);
         console.log('payload: ' + JSON.stringify(payload));
-        await this.webhookNotifier.notify(topic, payload);
-
+        let skipNotification = false;
         if (this.isCredentialIssuance(topic) && this.isVirtualAccessRights(payload) && this.isCredentialIssued(payload)) {
 
             console.log('Ajouter nouvelle attestation dans le backend');
@@ -38,7 +37,13 @@ export class WebHookController {
             }
 
             let attestationEmise = await this.attestationEmiseService.findByEmail(nouvelleAttestationEmise.email);
+            if (!attestationEmise) {
+                await this.delay(500);
+                attestationEmise = await this.attestationEmiseService.findByEmail(nouvelleAttestationEmise.email);
+            }
             if (attestationEmise) {
+                console.log('Attestation déjà présente');
+                skipNotification = true;
                 attestationEmise.time = nouvelleAttestationEmise.time;
                 attestationEmise.connectionId = nouvelleAttestationEmise.connectionId;
                 attestationEmise.credentialExchangeId = nouvelleAttestationEmise.credentialExchangeId;
@@ -50,6 +55,8 @@ export class WebHookController {
                 attestationEmise = await this.attestationEmiseService.create(nouvelleAttestationEmise);
             }
        }
+       console.log('Skip Notification: ' + skipNotification);
+       if (!skipNotification) await this.webhookNotifier.notify(topic, payload);
     }
 
     private isCredentialIssuance(topic: string): boolean {
@@ -79,4 +86,7 @@ export class WebHookController {
         return attestationEmise;
     }
 
+    private delay(time) {
+        return new Promise(resolve => setTimeout(resolve, time));
+    }
 }
