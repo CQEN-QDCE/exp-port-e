@@ -78,11 +78,12 @@ router.get('/connection', async (req, res) => {
  */
 async function createConnection(){
 
+    console.log("[createConnection] Creation d'une nouvelle connexion");
     axios.defaults.baseURL = BASE_URL;
 
     try{
         const response = await axios.post(`${ENDPOINT_CONNECTION}`, {}, config);
-        console.log("connection_id: ", response.data.connection_id);
+        console.log("[createConnection] connection_id: ", response.data.connection_id);
         return {
             "connection_id": response.data.connection_id,
             "invitation_url": response.data.invitation_url, 
@@ -90,12 +91,16 @@ async function createConnection(){
             "service_endpoint": response.data.invitation.serviceEndpoint
             }
     } catch (error) {
-        if(error.response){ 
+        console.log("[createConnection] Erreur"); 
+        if(error.response){
+            console.log("[createConnection] Erreur response: "); 
             console.log(error.response.statusText);
         } else if(error.request){
+            console.log("[createConnection] Erreur request: ");
             console.log(error.request);
         } else {
-            console.log("Erreur inconnu: ", error.message); 
+            console.log("[createConnection] Erreur inconnu: ");
+            console.log(error.message); 
         }
         console.log(error);
     }
@@ -103,38 +108,37 @@ async function createConnection(){
 
 /**
  * Faire le pooling de la connexion qui a été envoyée au client. Une fois que le 
+ * status change de invitation à response, faire appel à l'envoi de la demande de preuve. 
  * @param {*} connectionId 
  */
 async function poolingConnection(connectionId){
 
-    console.log("[poolingConnection] Pooling la connection_id : ", connectionId); 
+    console.log("[poolingConnection] connection_id: ", connectionId); 
 
     let i = 0;
 
     const connIntervalId = setInterval(async () => {
         console.log(`[poolingConnection] connectionId: ${connectionId}, iteration: (${i})`);
         let connStatus = await getConnectionStatus(connectionId);
-        //console.log(connStatus.state);
+        console.log(`[poolingConnection] connectionId: ${connectionId}, connStatus.state: (${connStatus.state})`);
 
         if (connStatus.state == 'response'){
-            console.log(`[poolingConnection] Connexion ${connectionId} acceptée.`);
+            console.log(`[poolingConnection] ===>>> Connexion ${connectionId} acceptée.`);
             clearInterval(connIntervalId);
             await sendProofRequest(connectionId);
         }
         i++;
     }, 10000);
-    console.log("[poolingConnection] Fin du pooling");
-    //console.log(await getConnectionStatus(connectionId));
-
+    console.log(`[poolingConnection] connectionId: ${connectionId}, Fin du pooling`);
 }
 
 /**
- * 
+ * Recupère le status de la connexion. 
  * @param {*} connectionId 
  * @returns 
  */
 async function getConnectionStatus(connectionId){
-    console.log(`[getConnectionStatus] ${connectionId}`)
+    console.log(`[getConnectionStatus] connection_id: ${connectionId}`)
     axios.defaults.baseURL = BASE_URL;
 
     try{
@@ -148,26 +152,31 @@ async function getConnectionStatus(connectionId){
         });
         return response.data;
     } catch (error) {
-        
-        if(error.response){ 
-            console.log("[getConnectionStatus] " , error.response.statusText);
+        console.log("[getConnectionStatus] Erreur"); 
+        if(error.response){
+            console.log("[getConnectionStatus] Erreur response: "); 
+            console.log(error.response.statusText);
         } else if(error.request){
-            console.log("[getConnectionStatus] ", error.request);
+            console.log("[getConnectionStatus] Erreur request: ");
+            console.log(error.request);
         } else {
-          console.log("[getConnectionStatus] Erreur inconnu: ", error.message); 
+            console.log("[getConnectionStatus] Erreur inconnu: ");
+            console.log(error.message); 
         }
+        console.log(error);
     }
 }
 
 
 /**
- * 
+ * Envoie à l'utilisateur une demande de preuve, puis commence à faire du pooling 
+ * en attente de la réponse présentée. 
  * @param {*} connectionId 
  * @returns 
  */
 async function sendProofRequest(connectionId){
 
-    console.log(`[sendProofRequest] ${connectionId}`)
+    console.log(`[sendProofRequest] connection_id: ${connectionId}`)
     axios.defaults.baseURL = BASE_URL;
 
     let body  =
@@ -190,43 +199,50 @@ async function sendProofRequest(connectionId){
                 }, 
                 "requested_predicates" : {}
             }
-        };
+        };response
 
     try{
         const response = await axios.post(`${ENDPOINT_INVITATION}`, body, config);
-        console.log("[sendProofRequest] demande de preuve envoyée")
-        //console.log("PROOF-REQUEST: ", response.data);
+        console.log("[sendProofRequest] Demande de preuve envoyée")
+        console.log("[sendProofRequest] PROOF-REQUEST: ", response.data);
         //console.log("PRES EX ID: ", response.data.presentation_exchange_id);
-        await poolingProofRequest(response.data.presentation_exchange_id); 
-        //return response;
+        await poolingProofRequest(response.data.presentation_exchange_id, connectionId); 
+
     } catch(error){
-        console.log("Erreur de generation de la proof-request..."); 
-        if(error.response){ 
+        console.log("[sendProofRequest] Erreur de generation de la proof-request..."); 
+        if(error.response){
+            console.log("[sendProofRequest] Erreur response: "); 
             console.log(error.response.statusText);
         } else if(error.request){
+            console.log("[sendProofRequest] Erreur request: ");
             console.log(error.request);
         } else {
-            console.log("Erreur inconnu: ", error.message); 
+            console.log("[sendProofRequest] Erreur inconnu: ");
+            console.log(error.message); 
         }
         console.log(error);
     }
 }
 
+/**
+ * Faire e pooling de la présentation de la preuve. 
+ * @param {*} presentationExchangeId 
+ * @param {*} connectionId 
+ */
+async function poolingProofRequest(presentationExchangeId, connectionId){
 
-async function poolingProofRequest(presentationExchangeId){
-
-    console.log("[poolingProofRequest] Pooling la presentationExchangeId: ", presentationExchangeId); 
+    console.log("[poolingProofRequest] connection_id: ", connectionId); 
 
     let i = 0;
     const proofIntervalId = setInterval(async () => {
         console.log(`[poolingProofRequest] PROOF_REQUEST: [${presentationExchangeId}] [${i}]` );
         let proofStatus = await getProofRequestStatus(presentationExchangeId);
-        //console.log(proofStatus.state);
 
         if (proofStatus.state == 'response'){    
             console.log(`[poolingProofRequest] demande de preuve présentée par l'usager`)
-            clearInterval(intervalId);
-            await sendProofRequest(proofIntervalId);
+            clearInterval(proofIntervalId);
+
+           // Aller checker les inforamations d'accès dans la base de donnés
         }
         i++;
     }, 10000);
@@ -234,6 +250,11 @@ async function poolingProofRequest(presentationExchangeId){
 }
 
 
+/**
+ * 
+ * @param {*} presentationExchangeId 
+ * @returns 
+ */
 async function getProofRequestStatus(presentationExchangeId){
 
     axios.defaults.baseURL = BASE_URL;
@@ -256,24 +277,29 @@ async function getProofRequestStatus(presentationExchangeId){
         //console.log(proofStatus.data);
         return proofStatus.data;
     } catch (error) {
-        console.log("error");
-        console.log(error);
-        console.log(error.response.status);
-        console.log(error.response.statusText); 
-        if(error.response){ 
-            //console.log(error.response.statusText);
+        console.log("[getProofRequestStatus] Erreur"); 
+        if(error.response){
+            console.log("[getProofRequestStatus] Erreur response: "); 
+            console.log(error.response.statusText);
         } else if(error.request){
-            //console.log(error.request);
+            console.log("[getProofRequestStatus] Erreur request: ");
+            console.log(error.request);
         } else {
-          //  console.log("Erreur inconnu: ", error.message); 
+            console.log("[getProofRequestStatus] Erreur inconnu: ");
+            console.log(error.message); 
         }
+        console.log(error);
     }
 
 }
 
-
+/**
+ * 
+ * @param {*} presentationExchangeId 
+ */
 async function recupereDonneesProof(presentationExchangeId){
 
+    console.log("[recupereDonneesProof] ")
     axios.defaults.baseURL = BASE_URL;
 
     try{
@@ -285,21 +311,22 @@ async function recupereDonneesProof(presentationExchangeId){
                 'Content-Type': 'application/json' 
             }
         });
-        console.log("DONNEES DE LA PREUVE: ");
-        console.log(proofData.data.presentation.requested_proof.revealed_attrs.email.raw); 
+        console.log("[recupereDonneesProof] DONNEES DE LA PREUVE: ");
+        console.log("[recupereDonneesProof] ", proofData.data.presentation.requested_proof.revealed_attrs.email.raw); 
         
     } catch (error) {
-        console.log("error");
-        console.log(error);
-        console.log(error.response.status);
-        console.log(error.response.statusText); 
-        if(error.response){ 
-            //console.log(error.response.statusText);
+        console.log("[recupereDonneesProof] Erreur"); 
+        if(error.response){
+            console.log("[recupereDonneesProof] Erreur response: "); 
+            console.log(error.response.statusText);
         } else if(error.request){
-            //console.log(error.request);
+            console.log("[recupereDonneesProof] Erreur request: ");
+            console.log(error.request);
         } else {
-          //  console.log("Erreur inconnu: ", error.message); 
+            console.log("[recupereDonneesProof] Erreur inconnu: ");
+            console.log(error.message); 
         }
+        console.log(error);
     }
 }
 
@@ -337,6 +364,17 @@ async function registrerShortURL(connectionData){
         let shortUrl = BASE_SHORT_URL.concat(response.data.uniqueId); 
         return shortUrl;
     } catch(error) {
+        console.log("[registrerShortURL] Erreur"); 
+        if(error.response){
+            console.log("[registrerShortURL] Erreur response: "); 
+            console.log(error.response.statusText);
+        } else if(error.request){
+            console.log("[registrerShortURL] Erreur request: ");
+            console.log(error.request);
+        } else {
+            console.log("[registrerShortURL] Erreur inconnu: ");
+            console.log(error.message); 
+        }
         console.log(error);
     }
 }
