@@ -121,7 +121,7 @@ async function poolingConnection(connectionId){
     const connIntervalId = setInterval(async () => {
         console.log(`[poolingConnection] connectionId: ${connectionId}, iteration: (${i})`);
         let connStatus = await getConnectionStatus(connectionId);
-        console.log(`[poolingConnection] connectionId: ${connectionId}, connStatus.state: (${connStatus.state})`);
+        //console.log(`[poolingConnection] connectionId: ${connectionId}, connStatus.state: (${connStatus.state})`);
 
         if (connStatus.state == 'response'){
             console.log(`[poolingConnection] ===>>> Connexion ${connectionId} acceptée.`);
