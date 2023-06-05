@@ -286,8 +286,6 @@ objects:
                 $([ ! -z "${AGENT_ADMIN_API_KEY}" ] && echo "--admin-api-key ${AGENT_ADMIN_API_KEY}" || echo "--admin-insecure-mode")
                 --log-level ${AGENT_LOG_LEVEL});
             env:
-              - name: ACAPY_LABEL
-                value: ${ACAPY_LABEL}
               - name: ACAPY_IMAGE_URL
                 value: ${ACAPY_IMAGE_URL}               
               - name: ACAPY_AUTO_ACCEPT_INVITES
@@ -647,7 +645,7 @@ parameters:
   displayName: ACA-Py label
   description: Label of the agent.
   required: true
-  value: 'Aries verifier'
+  value: 'Service de vérification Port-e'
 - name: ACAPY_IMAGE_URL
   displayName: Agent Image URL
   description: The URL of the image for the agent
