@@ -55,7 +55,7 @@ export class WebHookController {
                 attestationEmise = await this.attestationEmiseService.create(nouvelleAttestationEmise);
             }
        }
-       console.log('Skip Notification');
+       console.log('Skip Notification: ' + skipNotification);
        if (!skipNotification) await this.webhookNotifier.notify(topic, payload);
     }
 
