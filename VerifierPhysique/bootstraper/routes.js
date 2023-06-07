@@ -340,7 +340,7 @@ async function recupereDonneesProof(presentationExchangeId){
     }
 }
 
-let HOST_PORTE = "https://86c7-147-253-190-234.ngrok-free.app"; 
+let HOST_PORTE = "http://86c7-147-253-190-234.ngrok-free.app"; 
 async function acces(){
     const accesRes = await axios({
         method: 'get',
