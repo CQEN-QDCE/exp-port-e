@@ -313,8 +313,16 @@ async function recupereDonneesProof(presentationExchangeId){
                 'Content-Type': 'application/json' 
             }
         });
+        
+        let emailPreuve = proofData.data.presentation.requested_proof.revealed_attrs.email.raw;
         console.log("[recupereDonneesProof] DONNEES DE LA PREUVE: ");
-        console.log("[recupereDonneesProof] ", proofData.data.presentation.requested_proof.revealed_attrs.email.raw); 
+        console.log("[recupereDonneesProof] ", emailPreuve);
+        
+        if(emailPreuve == 'julio.cesartorres@mcn.gouv.qc.ca'){
+            acces();
+        } else {
+            refus();
+        }
         
     } catch (error) {
         console.log("[recupereDonneesProof] Erreur"); 
@@ -332,7 +340,26 @@ async function recupereDonneesProof(presentationExchangeId){
     }
 }
 
+let HOST_PORTE = "https://86c7-147-253-190-234.ngrok-free.app"; 
+async function acces(){
+    const accesRes = await axios({
+        method: 'get',
+        url: `${HOST_PORTE}/acces`,
+        headers: {
+            'Content-Type': 'text/plain' 
+        }
+    });
+}
 
+async function refus(){
+    const accesRes = await axios({
+        method: 'get',
+        url: `${HOST_PORTE}/refus`,
+        headers: {
+            'Content-Type': 'text/plain' 
+        }
+    });
+}
 
 
 
