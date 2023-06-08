@@ -19,6 +19,8 @@ const ENDPOINT_CONNECTION = process.env.ENDPOINT_CONNECTION;
 const ENDPOINT_INVITATION = process.env.ENDPOINT_INVITATION;
 const X_API_KEY           = process.env.X_API_KEY;
 
+const HOST_PORTE = "https://8e32-147-253-190-234.ngrok-free.app"; 
+
 // Configurer axios 
 const axios = require("axios");
 axios.defaults.baseURL = BASE_URL;
@@ -340,7 +342,7 @@ async function recupereDonneesProof(presentationExchangeId){
     }
 }
 
-let HOST_PORTE = "http://86c7-147-253-190-234.ngrok-free.app"; 
+
 async function acces(){
     const accesRes = await axios({
         method: 'get',
