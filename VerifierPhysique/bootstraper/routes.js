@@ -320,11 +320,11 @@ async function recupereDonneesProof(presentationExchangeId){
         console.log("[recupereDonneesProof] DONNEES DE LA PREUVE: ");
         console.log("[recupereDonneesProof] ", emailPreuve);
         
-        if(emailPreuve == 'julio.cesartorres@mcn.gouv.qc.ca'){
+        //if(emailPreuve != null){
             acces();
-        } else {
+        /*} else {
             refus();
-        }
+        }*/
         
     } catch (error) {
         console.log("[recupereDonneesProof] Erreur"); 
