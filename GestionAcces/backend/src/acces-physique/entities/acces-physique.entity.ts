@@ -1,10 +1,10 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, PrimaryColumn, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 @Entity()
 export class AccesPhysique {
 
-    @PrimaryGeneratedColumn()
-    codePersonne: number;
+    @PrimaryColumn({length: 64})
+    courriel: string;
     
     @PrimaryGeneratedColumn()
     codeRessPhysique: number; 
