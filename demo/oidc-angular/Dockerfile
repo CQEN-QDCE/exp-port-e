@@ -23,7 +23,7 @@ RUN npm install
 RUN ng build --configuration=$configuration
 
 # Stage 1, based on Nginx, to have only the compiled app, ready for production with Nginx
-FROM nginx:1.15.8-alpine
+FROM nginx:1-alpine
 
 # Remove default Nginx website
 RUN rm -rf /usr/share/nginx/html/*
