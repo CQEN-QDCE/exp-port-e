@@ -19,7 +19,7 @@ const ENDPOINT_CONNECTION = process.env.ENDPOINT_CONNECTION;
 const ENDPOINT_INVITATION = process.env.ENDPOINT_INVITATION;
 const X_API_KEY           = process.env.X_API_KEY;
 
-const HOST_PORTE = "https://8e32-147-253-190-234.ngrok-free.app"; 
+const HOST_PORTE = "http://7380-147-253-190-234.ngrok-free.app"; 
 
 // Configurer axios 
 const axios = require("axios");
