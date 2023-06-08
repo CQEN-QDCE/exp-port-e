@@ -17,18 +17,18 @@ export class AccesPhysiqueController {
     return this.accesPhysiqueService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.accesPhysiqueService.findOne(+id);
+  @Get(':courriel')
+  findOne(@Param('courriel') courriel: string) {
+    return this.accesPhysiqueService.findOne(courriel);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAccesPhysiqueDto: UpdateAccesPhysiqueDto) {
-    return this.accesPhysiqueService.update(+id, updateAccesPhysiqueDto);
+  @Patch(':courriel')
+  update(@Param('courriel') courriel: string, @Body() updateAccesPhysiqueDto: UpdateAccesPhysiqueDto) {
+    return this.accesPhysiqueService.update(courriel, updateAccesPhysiqueDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.accesPhysiqueService.remove(+id);
+  @Delete(':courriel')
+  remove(@Param('courriel') courriel: string) {
+    return this.accesPhysiqueService.remove(courriel);
   }
 }
