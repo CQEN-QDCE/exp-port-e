@@ -19,7 +19,7 @@ const ENDPOINT_CONNECTION = process.env.ENDPOINT_CONNECTION;
 const ENDPOINT_INVITATION = process.env.ENDPOINT_INVITATION;
 const X_API_KEY           = process.env.X_API_KEY;
 
-const HOST_PORTE = "http://7380-147-253-190-234.ngrok-free.app"; 
+const HOST_PORTE_URL      = process.env.HOST_PORTE_URL; 
 
 // Configurer axios 
 const axios = require("axios");
@@ -344,19 +344,35 @@ async function recupereDonneesProof(presentationExchangeId){
 
 
 async function acces(){
-    const accesRes = await axios({
-        method: 'get',
-        url: `${HOST_PORTE}/acces`,
-        headers: {
-            'Content-Type': 'text/plain' 
-        }
-    });
+    
+    axios.defaults.baseURL = HOST_PORTE_URL;
+
+    try{
+        const accesRes = await axios({
+            method: 'get',
+            url: `${HOST_PORTE_URL}/acces`,
+            headers: {
+                'Content-Type': 'text/plain' 
+            }
+        });
+    }catch(error){
+        console.log("error access"); 
+        console.log(error.code); 
+        console.log(error.config.url); 
+        console.log(error.response.status);
+        console.log(error.response.statusText); 
+        console.log(error.response.data);
+    }
+    
 }
 
 async function refus(){
+
+    axios.defaults.baseURL = HOST_PORTE_URL;
+
     const accesRes = await axios({
         method: 'get',
-        url: `${HOST_PORTE}/refus`,
+        url: `${HOST_PORTE_URL}/refus`,
         headers: {
             'Content-Type': 'text/plain' 
         }
