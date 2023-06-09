@@ -137,7 +137,7 @@ async function poolingConnection(connectionId){
             console.log(`[poolingConnection] connectionId: ${connectionId}, Fin du pooling d'établisement de connexion`);
         }
         i++;
-    }, DELAY_S);
+    }, DELAY_L);
     
 }
 
@@ -254,7 +254,7 @@ async function poolingProofRequest(presentationExchangeId, connectionId){
             console.log(`[poolingProofRequest] connectionId: ${connectionId}, Fin du pooling de proof-request`);
         }
         i++;
-    }, DELAY_S);
+    }, DELAY_L);
 }
 
 /**
