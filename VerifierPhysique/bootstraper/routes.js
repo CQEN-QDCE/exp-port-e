@@ -130,10 +130,11 @@ async function poolingConnection(connectionId){
             console.log("[poolingProofRequest] INTERVAL CLEARED!!!!!!=============>>>>>>>> CONNINTERVALID: ", connIntervalId);
             clearInterval(connIntervalId);
             await sendProofRequest(connectionId);
+            console.log(`[poolingConnection] connectionId: ${connectionId}, Fin du pooling d'établisement de connexion`);
         }
         i++;
     }, 10000);
-    console.log(`[poolingConnection] connectionId: ${connectionId}, Fin du pooling`);
+    
 }
 
 /**
@@ -244,12 +245,13 @@ async function poolingProofRequest(presentationExchangeId, connectionId){
         console.log(`[poolingProofRequest] PROOF_REQUEST: [${presentationExchangeId}] [${i}]` );
         let proofStatus = await getProofRequestStatus(presentationExchangeId);
 
+        console.log("*******************************************", proofStatus.state)
+
         if (proofStatus.state == 'response'){    
             console.log(`[poolingProofRequest] demande de preuve présentee par l'usager`)
             console.log("[poolingProofRequest] INTERVAL CLEARED!!!!!!=============>>>>>>>> PROOFINTERVALID: ", proofIntervalId);
             clearInterval(proofIntervalId);
-
-           // Aller checker les inforamations d'accès dans la base de donnés
+            console.log(`[poolingProofRequest] connectionId: ${connectionId}, Fin du pooling de proof-request`);
         }
         i++;
     }, 10000);
