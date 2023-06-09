@@ -121,9 +121,8 @@ async function poolingConnection(connectionId){
     let i = 0;
 
     const connIntervalId = setInterval(async () => {
-        console.log(`[poolingConnection] connectionId: ${connectionId}, iteration: (${i})`);
         let connStatus = await getConnectionStatus(connectionId);
-        console.log(`[poolingConnection] connectionId: ${connectionId}, connStatus.state: (${connStatus.state})`);
+        console.log(`[poolingConnection] connectionId: ${connectionId}, connStatus.state: (${connStatus.state}), iteration: [${i}]`);
 
         if (connStatus.state == 'response' || connStatus.state == 'active') {
             console.log(`[poolingConnection] ===>>> Connexion ${connectionId} acceptee.`);
@@ -238,14 +237,10 @@ async function sendProofRequest(connectionId){
  */
 async function poolingProofRequest(presentationExchangeId, connectionId){
 
-    console.log("[poolingProofRequest] connection_id: ", connectionId); 
-
     let i = 0;
     const proofIntervalId = setInterval(async () => {
-        console.log(`[poolingProofRequest] PROOF_REQUEST: [${presentationExchangeId}] [${i}]` );
+        console.log(`[poolingProofRequest] PROOF_REQUEST: connection_id: ", ${connectionId}, presentationExchangeId[${presentationExchangeId}], iteration: [${i}]` );
         let proofStatus = await getProofRequestStatus(presentationExchangeId);
-
-        console.log("*******************************************", proofStatus.state)
 
         if (proofStatus.state == 'presentation_received' || proofStatus.state == 'verified'){    
             console.log(`[poolingProofRequest] demande de preuve présentee par l'usager`)
