@@ -21,6 +21,11 @@ const X_API_KEY           = process.env.X_API_KEY;
 
 const HOST_PORTE_URL      = process.env.HOST_PORTE_URL; 
 
+// Variables de temps
+const DELAY_S = 3;
+const DELAY_M = 5;
+const DELAY_L = 10;
+
 // Configurer axios 
 const axios = require("axios");
 axios.defaults.baseURL = BASE_URL;
@@ -132,7 +137,7 @@ async function poolingConnection(connectionId){
             console.log(`[poolingConnection] connectionId: ${connectionId}, Fin du pooling d'établisement de connexion`);
         }
         i++;
-    }, 10000);
+    }, DELAY_S);
     
 }
 
@@ -249,7 +254,7 @@ async function poolingProofRequest(presentationExchangeId, connectionId){
             console.log(`[poolingProofRequest] connectionId: ${connectionId}, Fin du pooling de proof-request`);
         }
         i++;
-    }, 10000);
+    }, DELAY_S);
 }
 
 /**
