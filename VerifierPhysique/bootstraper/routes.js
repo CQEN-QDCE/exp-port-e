@@ -127,6 +127,7 @@ async function poolingConnection(connectionId){
 
         if (connStatus.state == 'response' || connStatus.state == 'active') {
             console.log(`[poolingConnection] ===>>> Connexion ${connectionId} acceptee.`);
+            console.log("[poolingProofRequest] INTERVAL CLEARED!!!!!!=============>>>>>>>> CONNINTERVALID: ", connIntervalId);
             clearInterval(connIntervalId);
             await sendProofRequest(connectionId);
         }
@@ -245,6 +246,7 @@ async function poolingProofRequest(presentationExchangeId, connectionId){
 
         if (proofStatus.state == 'response'){    
             console.log(`[poolingProofRequest] demande de preuve présentee par l'usager`)
+            console.log("[poolingProofRequest] INTERVAL CLEARED!!!!!!=============>>>>>>>> PROOFINTERVALID: ", proofIntervalId);
             clearInterval(proofIntervalId);
 
            // Aller checker les inforamations d'accès dans la base de donnés
