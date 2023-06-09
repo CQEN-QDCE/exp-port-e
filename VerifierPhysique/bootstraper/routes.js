@@ -131,7 +131,7 @@ async function poolingConnection(connectionId){
 
         if (connStatus.state == 'response' || connStatus.state == 'active') {
             console.log(`[poolingConnection] ===>>> Connexion ${connectionId} acceptee.`);
-            console.log("[poolingProofRequest] INTERVAL CLEARED!!!!!!=============>>>>>>>> CONNINTERVALID: ", connIntervalId);
+            console.log("[poolingProofRequest] INTERVAL CLEARED!!!!!!=============>>>>>>>> CONNINTERVALID: ");
             clearInterval(connIntervalId);
             await sendProofRequest(connectionId);
             console.log(`[poolingConnection] connectionId: ${connectionId}, Fin du pooling d'établisement de connexion`);
@@ -147,7 +147,7 @@ async function poolingConnection(connectionId){
  * @returns 
  */
 async function getConnectionStatus(connectionId){
-    console.log(`[getConnectionStatus] connection_id: ${connectionId}`)
+
     axios.defaults.baseURL = BASE_URL;
 
     try{
@@ -249,7 +249,7 @@ async function poolingProofRequest(presentationExchangeId, connectionId){
 
         if (proofStatus.state == 'presentation_received' || proofStatus.state == 'verified'){    
             console.log(`[poolingProofRequest] demande de preuve présentee par l'usager`)
-            console.log("[poolingProofRequest] INTERVAL CLEARED!!!!!!=============>>>>>>>> PROOFINTERVALID: ", proofIntervalId);
+            console.log("[poolingProofRequest] INTERVAL CLEARED!!!!!!=============>>>>>>>> PROOFINTERVALID: ");
             clearInterval(proofIntervalId);
             console.log(`[poolingProofRequest] connectionId: ${connectionId}, Fin du pooling de proof-request`);
         }
