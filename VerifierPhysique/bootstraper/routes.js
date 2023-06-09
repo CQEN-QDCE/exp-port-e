@@ -22,9 +22,9 @@ const X_API_KEY           = process.env.X_API_KEY;
 const HOST_PORTE_URL      = process.env.HOST_PORTE_URL; 
 
 // Variables de temps
-const DELAY_S = 3;
-const DELAY_M = 5;
-const DELAY_L = 10;
+const DELAY_S = 3000;
+const DELAY_M = 5000;
+const DELAY_L = 10000;
 
 // Configurer axios 
 const axios = require("axios");
