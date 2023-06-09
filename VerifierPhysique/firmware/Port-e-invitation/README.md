@@ -15,6 +15,11 @@
 
 ## Bill of Materials 
 
+- Arduino Uno R3
+- Carte d'extension shield relais 2 sorties avec octocoupleur HÙI LO TRIG 
+- Plaquette NodeMCU V3 Lua IoT ESP8266 WiFi
+- PN532 Elechouse NFC RFID module V3 compatible Arduino
+
 ### NodeMCU - unité microcontrollée intégrée au Wireless 
 
 **Pinout NodeMCU** 
@@ -79,3 +84,14 @@ Ce projet est basé sur d'autres projets
 
 [Description du pinout du module NodeMCU](https://esp8266-shop.com/esp8266-guide/esp8266-nodemcu-pinout/)
 
+## TODO
+
+- [ ] Optimiser le code 
+- [ ] Web thread workers
+- [ ] Parametrisation
+- [ ] Créér une liste de matériel
+- [ ] Implémenter le endpoint /acces/physique
+- [ ] Tester relay et leds dans NodeMCU
+- [ ] Corriger les installations de hardware 
+- [ ] Ajouter l'adresse du serveur NodeMCU ngrok à environment var
+- [ ] Ajouter leds et buzzer au circuit
