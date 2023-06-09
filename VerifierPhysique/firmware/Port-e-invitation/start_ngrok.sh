@@ -1,0 +1,1 @@
+ngrok http --host-header=rewrite 172.20.10.10:80
