@@ -247,7 +247,7 @@ async function poolingProofRequest(presentationExchangeId, connectionId){
 
         console.log("*******************************************", proofStatus.state)
 
-        if (proofStatus.state == 'response'){    
+        if (proofStatus.state == 'presentation_received' || proofStatus.state == 'verified'){    
             console.log(`[poolingProofRequest] demande de preuve présentee par l'usager`)
             console.log("[poolingProofRequest] INTERVAL CLEARED!!!!!!=============>>>>>>>> PROOFINTERVALID: ", proofIntervalId);
             clearInterval(proofIntervalId);
