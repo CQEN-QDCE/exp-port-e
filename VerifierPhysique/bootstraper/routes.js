@@ -197,7 +197,9 @@ async function sendProofRequest(connectionId){
                         "name": "email",
                         "restrictions": [
                             {
-                                "cred_def_id": "FUKLxsjrYSHgScLbHuPTo4:3:CL:29366:RegistreAccesVirtuelCQEN-0.1.2-flihp"
+                                // "cred_def_id": "FUKLxsjrYSHgScLbHuPTo4:3:CL:29366:RegistreAccesVirtuelCQEN-0.1.2-flihp"
+                                "schema_name": "CQENDroitAccesVirtuel", 
+                                "issuer_did": "FUKLxsjrYSHgScLbHuPTo4"
                             }
                         ]
                     }
