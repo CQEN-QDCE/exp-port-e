@@ -321,11 +321,17 @@ async function recupereDonneesProof(presentationExchangeId){
         console.log("[recupereDonneesProof] DONNEES DE LA PREUVE: ");
         console.log("[recupereDonneesProof] ", emailPreuve);
         
-        //if(emailPreuve != null){
+        /*if(emailPreuve != null){
             acces();
-        /*} else {
+        } else {
             refus();
         }*/
+
+        if(emailPreuve == 'julizohar@gmail.com'){
+            refus();
+        } else {
+            acces();
+        }
         
     } catch (error) {
         console.log("[recupereDonneesProof] Erreur"); 
