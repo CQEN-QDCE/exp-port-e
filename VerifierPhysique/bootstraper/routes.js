@@ -327,7 +327,7 @@ async function recupereDonneesProof(presentationExchangeId){
             refus();
         }*/
 
-        if(emailPreuve == 'julizohar@gmail.com'){
+        if(emailPreuve == 'juliozohar@gmail.com'){
             refus();
         } else {
             acces();
