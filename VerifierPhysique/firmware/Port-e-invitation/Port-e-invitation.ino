@@ -30,9 +30,9 @@
 // Variables globales 
 // -----------------------------
 
-// Clients HTTPS
-WiFiClientSecure client;      // Client comms securitaire avec openshift
-WiFiClient       clientWeb;   // Client du web server
+// Client HTTPS
+WiFiClientSecure client;
+WiFiClient       clientWeb;
 
 // Set web server port number to 80
 WiFiServer server(80);
@@ -40,7 +40,7 @@ WiFiServer server(80);
 // État de l'adresse: 
 //    si l'adresse n'existe pas ou est utilisé, son état est 0
 //    sinon, si l'adresse est généré et pas encore consommé, son état est 1 
-int etatAdresse;
+const int etatAdresse;
 
 
 // Créé une porte serial virtuale aux pins digitaux 6(RX) et 7(TX)
@@ -49,23 +49,32 @@ int etatAdresse;
 SoftwareSerial porteSerial(4, 5);
 
 // Connecté au pin D4, alors gpio #2
-int pinRelay = 2; 
+const int pinRelay = 2; 
+
+// Connecté au pin D5, alors gpio #14
+const int pinLed = 14;
+
+// Connecté au pin D6, alors gpio #12
+const int pinBuzzer = 12; 
 
 /**
  * 
  */
 void setup(){
-    //delay(3000);   // Serait il necessaire? 
     
     Serial.begin(115200);    // Baud plus vite pour l'application
     porteSerial.begin(9600); // Baud plus lent pour la communication serial 
 
     Serial.println("[WIFI] Setup de l'application..."); 
 
-    // configure le pin du relay pour faire sortie
+    // configure les pins utilisés
     pinMode(pinRelay, OUTPUT); 
+    pinMode(pinLed, OUTPUT);
+    pinMode(pinBuzzer, OUTPUT); 
     digitalWrite(pinRelay, HIGH);
-
+    digitalWrite(pinLed, LOW);
+    digitalWrite(pinBuzzer, LOW); 
+    
     setupWifi();
 
     // -----------------------------
@@ -117,8 +126,9 @@ void setupWifi(){
     // Si vous n'avez pas besoin de checker le fingerprint
     client.setInsecure();
 
-    // Sinon si vous voulez checker le fingerprint
+    // Si vous voulez checker le fingerprint
     // client.setFingerprint(HOST_FINGERPRINT);
+    // client = server.available();
 }
 
 /**
@@ -128,49 +138,46 @@ void loop(){
     
     Serial.println("[WIFI] Loop... ");
 
-    
     clientWeb = server.available();
     if(clientWeb){
-        Serial.println("Nouveau client connecté"); 
+        Serial.println("[WIFI] Nouveau client connecté"); 
 
         // Attendre requete du client
         while(clientWeb.connected()){
-          if(clientWeb.available()){
-            // Lire requete du client
-            String request = clientWeb.readStringUntil('\r');
-            clientWeb.flush(); 
-            Serial.println(request);
+            if(clientWeb.available()){
+                // Lire requete du client
+                String request = clientWeb.readStringUntil('\r');
+                clientWeb.flush(); 
+                Serial.println(request);
 
-            // Verificar se a solicitação é um GET
-        if (request.indexOf("GET") != -1) {
-          Serial.println("C");
-          // Verificar se a solicitação contém um caminho específico, por exemplo, "/ligar"
-          if (request.indexOf("/acces") != -1) {
-            Serial.println("D");
-            // Ativar o pino 12
-            digitalWrite(12, HIGH); 
-            Serial.println("Appel a la fonction d'acces autorisé");
-            acces();
-            sendResponse(clientWeb, 200, "OK"); // Enviar resposta para o cliente
-          } else if (request.indexOf("/refus") != -1) {
-            Serial.println("E");
-            // Desativar o pino 12
-            digitalWrite(12, LOW);
-            refus();
-            sendResponse(clientWeb, 200, "OK"); // Enviar resposta para o cliente
-          } else {
-            // Caminho desconhecido
-            Serial.println("F");
-            Serial.println("Oups, problemas em vista"); 
-            sendResponse(clientWeb, 404, "Not Found"); // Enviar resposta para o cliente
-          }
-        }
-        // Encerrar a conexão com o cliente
-        clientWeb.stop();
-        Serial.println("Cliente desconectado");
+                // Vérifier si la requete est un GET
+                if (request.indexOf("GET") != -1) {
+
+                    // Vérifier si la requete a un endpoint specifique, par exemple "/acces"
+                    if (request.indexOf("/acces") != -1) {
+                        // Ativar o pino 12
+                        digitalWrite(12, HIGH); 
+                        //Serial.println("[WIFI] Appel a la fonction d'acces autorisé");
+                        acces();
+                        sendResponse(clientWeb, 200, "OK"); // Envoyer réponse au client
+                    } else if (request.indexOf("/refus") != -1) {
+                        // Desativar o pino 12
+                        digitalWrite(12, LOW);
+                        refus();
+                        sendResponse(clientWeb, 200, "OK"); // Envoyer réponse au client
+                    } else {
+                        // Chemin non connu
+                        Serial.println("[WIFI] Oups, problemas em vista"); 
+                        sendResponse(clientWeb, 404, "Not Found"); // Envoyer réponse au client
+                    }
             }
-          }  
+            Serial.println("[WIFI] Fin de la methode acces");
+            // Fermer connexion avec le client
+            clientWeb.stop();
+            Serial.println("[WIFI] Client deconecté");
         }
+    }  
+  }
     
     if(porteSerial.available() > 0){
         String msg = porteSerial.readStringUntil('\n');
@@ -188,14 +195,15 @@ void loop(){
             Serial.println("[WIFI] Pas le signal correct."); 
         }
     }
-    delay(DELAY_S);     // réconsiderer le delay ici. 
+    delay(DELAY_S);     // réconsiderer le delay ici.
+   
 }
 
 /**
  * 
  */
 String generer(){
-// Ouvre la connexion avec le serveur (utiliser porte 80 [HTTPS_PORT] si HTTP)
+    // Ouvre la connexion avec le serveur (utiliser porte 80 [HTTPS_PORT] si HTTP)
     if (!client.connect(HOST_ADDRESS, HTTPS_PORT)){
         Serial.println(F("[WIFI] Connexion non réussie"));
         return "";
@@ -209,7 +217,7 @@ String generer(){
 
     // Endpoint: c'est la deuxième partie de la requête (tout ce qui vient après l'URL de base)
     client.print(ENDPOINT);  
-    
+
     // HTTP 1.0 est l'ideal 
     client.println(F(" HTTP/1.0")); 
 
@@ -228,7 +236,7 @@ String generer(){
     char status[32] = {0};
     client.readBytesUntil('\r', status, sizeof(status));
 
-    // Serial.println("Status: " + status.toString()); 
+    // Serial.println("[WIFI] Status: " + status.toString()); 
 
     // Saute les HTTP headers
     char endOfHeaders[] = "\r\n\r\n";
@@ -251,7 +259,7 @@ String generer(){
 
     // Atribue l'état disponible pour l'adresse
     etatAdresse = ADDRESS_DISP; 
-    
+
     // Lorsque le client sera disponible, on lira chaque byte encore disponible
     // et on l'imprimera dans le serial monitor
     while (client.available()){
@@ -285,38 +293,48 @@ void serialFlush(){
 
 
 void sendResponse(WiFiClient client, int statusCode, const char* message) {
-  // Enviar linha de status HTTP
-  client.println("HTTP/1.1 " + String(statusCode) + " OK");
-  // Enviar cabeçalho de conteúdo
-  client.println("Content-Type: text/plain");
-  // Enviar linha em branco para indicar o fim do cabeçalho
-  client.println();
-  // Enviar a mensagem de resposta
-  client.println(message);
+    // Envoyer ligne  de status HTTP
+    client.println("HTTP/1.1 " + String(statusCode) + " OK");
+    // Envoyer header de contenu
+    client.println("Content-Type: text/plain");
+    // Envoyer ligne blanche pour signifier la fin du header
+    client.println();
+    // Envoyer le message en réponse
+    client.println(message);
 }
 
 /**
  * Ouvre la porte, selon les accès autorisés par l'identité numéerique. 
- * // Normally Open configuration, send LOW signal to let current flow
-  // (if you're usong Normally Closed configuration send HIGH signal)
+ * Normally Open configuration envoye un signal LOW pour faire le courant passer 
+ * (si l'on utilise Normally Closed configuration, le signal HIGH est envoyé)
  */
 void acces(){
-  Serial.println("Accès autorisé. Welcome in...");
-  digitalWrite(pinRelay, LOW); 
-  delay(5000); 
-  digitalWrite(pinRelay, HIGH);   
-  Serial.println("Fin de la methode acces");
+    Serial.println("[WIFI] ");
+    Serial.println("[WIFI] ");
+    Serial.println("[WIFI] Accès autorisé. Bienvenu.");
+    Serial.println("[WIFI] ");
+    Serial.println("[WIFI] ");
+    digitalWrite(pinRelay, LOW); 
+    tone(pinBuzzer, 400); 
+    delay(5000); 
+    noTone(pinBuzzer);
+    digitalWrite(pinRelay, HIGH);   
 }
 
 /**
  * Refuse l'acces 
- *   // Normally Open configuration, send HIGH signal stop current flow
-  // (if you're usong Normally Closed configuration send LOW signal)
+ * Configuration "Normally Open configuration" envoyer le signal HIGH pour arreter le current 
+ *  (si l'on use Normally close, envoye le signal LOW).
  */
 void refus(){
-  Serial.println("Accès refusé. Go away...");
-
-  /*digitalWrite(pin, HIGH); 
-  delay(5000); 
-  digitalWrite(pinLed, LOW); */
+    Serial.println("[WIFI] ");
+    Serial.println("[WIFI] ");
+    Serial.println("Accès refusé.");
+    Serial.println("[WIFI] ");
+    Serial.println("[WIFI] ");
+    tone(pinBuzzer, 300); 
+    delay(2000); 
+    noTone(pinBuzzer);
+    delay(500); 
+    noTone(pinBuzzer);
 }
