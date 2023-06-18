@@ -10,6 +10,7 @@ IP_ADDR=$1
 if [ -z ${IP_ADDR} ]; then
     echo "Erreur de parametrisation" 
     echo "Utilisation: sh start_ngrok.sh <ip address>" 
+    exit 0
 else 
     echo "Démarrer le tunnel ngrok pour le serveur a l'adresse IP: [${IP_ADDR}]" 
     ngrok http --host-header=rewrite ${IP-ADDR}:80
