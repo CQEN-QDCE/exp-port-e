@@ -29,7 +29,7 @@
 
 ### Modèle reduit d'une porte
 
-- Construire le modelede la porte
+- Construire le modèle de la porte
 - Project box
 - Impression 3D de la place de protection au lecteur
 - Modulo RFID
@@ -101,3 +101,14 @@ Ce projet est basé sur d'autres projets
 
 [Description du pinout du module NodeMCU](https://esp8266-shop.com/esp8266-guide/esp8266-nodemcu-pinout/)
 
+## TODO
+
+- [ ] Optimiser le code 
+- [ ] Web thread workers
+- [ ] Parametrisation
+- [ ] Créér une liste de matériel
+- [ ] Implémenter le endpoint /acces/physique
+- [ ] Tester relay et leds dans NodeMCU
+- [ ] Corriger les installations de hardware 
+- [ ] Ajouter l'adresse du serveur NodeMCU ngrok à environment var
+- [ ] Ajouter leds et buzzer au circuit
