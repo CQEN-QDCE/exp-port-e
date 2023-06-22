@@ -18,9 +18,7 @@ const BASE_SHORT_URL      = process.env.BASE_SHORT_URL;
 const ENDPOINT_CONNECTION = process.env.ENDPOINT_CONNECTION;
 const ENDPOINT_INVITATION = process.env.ENDPOINT_INVITATION;
 const X_API_KEY           = process.env.X_API_KEY;
-
-const HOST_PORTE_URL      = process.env.HOST_PORTE_URL; 
-
+const HOST_PORTE_URL      = process.env.HOST_TUNNEL; 
 // Configurer axios 
 const axios = require("axios");
 axios.defaults.baseURL = BASE_URL;
