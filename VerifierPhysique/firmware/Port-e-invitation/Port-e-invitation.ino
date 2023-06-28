@@ -2,7 +2,7 @@
  * Deployé sur NodeMCU
  * 
  * Copyright (c) 2023 Gouvernement du Québec
- * Auteur: Julio Cesar Torres (torj01)
+ * Auteur: Julio Cesar Torres (torjc01)
  * SPDX-License-Identifier: LiLiQ-R-v.1.1
  * License-Filename: /LICENSE
  */
@@ -40,7 +40,7 @@ WiFiServer server(80);
 // État de l'adresse: 
 //    si l'adresse n'existe pas ou est utilisé, son état est 0
 //    sinon, si l'adresse est généré et pas encore consommé, son état est 1 
-const int etatAdresse;
+int etatAdresse;
 
 
 // Créé une porte serial virtuale aux pins digitaux 6(RX) et 7(TX)
