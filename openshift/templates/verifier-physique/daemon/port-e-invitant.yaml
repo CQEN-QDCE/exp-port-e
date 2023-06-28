@@ -270,7 +270,7 @@ parameters:
   displayName: Context source dir
   description: Répertoire ou sont les elements pour le build (notamment Dockerfile).
   required: false
-  value: VerifierPhysique/bootstraper
+  value: VerifierPhysique/daemon
 - name: GIT_REF
   displayName: Git reference
   description: Dénomination de la branche que sera utilisée pour le build.

@@ -11,7 +11,7 @@ APP_NAME=consommateur
 APP_DOMAIN=apps.exp.openshift.cqen.ca
 APP_SUBDOMAIN=exp-port-e-invitant
 GIT_REF=features/url-courte
-CONTEXT_SOURCE_DIR=VerifierPhysique/bootstraper
+CONTEXT_SOURCE_DIR=VerifierPhysique/daemon
 
 # Configuration de l'application
 BASE_URL            = https://exp-port-e-consommateur-agent-admin.apps.exp.openshift.cqen.ca
