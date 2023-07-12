@@ -20,16 +20,16 @@ export class AttestationEmiseService {
     return await this.attestationEmiseRepository.find(); 
   }
 
-  async findById(id: number) {
-    return await this.attestationEmiseRepository.findOneBy({id});
+  async findById(courriel: string) {
+    return await this.attestationEmiseRepository.findOneBy({courriel});
   }
 
   async findByEmail(email: string) {
     return await this.attestationEmiseRepository.findOne({ where: { email: email } });
   }
 
-  async update(id: number, attestationEmise: AttestationEmise) {
-    return await this.attestationEmiseRepository.update(id, attestationEmise); 
+  async update(courriel: string, attestationEmise: AttestationEmise) {
+    return await this.attestationEmiseRepository.update(courriel, attestationEmise); 
   }
 
   async remove(id: number) {

@@ -1,26 +1,34 @@
 import { Injectable } from '@nestjs/common';
 import { CreateAccesPhysiqueDto } from './dto/create-acces-physique.dto';
 import { UpdateAccesPhysiqueDto } from './dto/update-acces-physique.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { AccesPhysique } from './entities/acces-physique.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class AccesPhysiqueService {
+
+  constructor(@InjectRepository(AccesPhysique)
+	  private accessPhysiqueRepository: Repository<AccesPhysique>
+  ){}
+
   create(createAccesPhysiqueDto: CreateAccesPhysiqueDto) {
-    return 'This action adds a new accesPhysique';
+    return this.accessPhysiqueRepository.save(createAccesPhysiqueDto); 
   }
 
   findAll() {
-    return `This action returns all accesPhysique`;
+    return this.accessPhysiqueRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} accesPhysique`;
+  findOne(courriel: string) {
+    return this.accessPhysiqueRepository.findOneBy({courriel});
   }
 
-  update(id: number, updateAccesPhysiqueDto: UpdateAccesPhysiqueDto) {
-    return `This action updates a #${id} accesPhysique`;
+  update(courriel: string, updateAccesPhysiqueDto: UpdateAccesPhysiqueDto) {
+    return this.accessPhysiqueRepository.update(courriel, updateAccesPhysiqueDto);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} accesPhysique`;
+  remove(courriel: string) {
+    return this.accessPhysiqueRepository.delete(courriel);
   }
 }

@@ -44,9 +44,9 @@ export class WebHookController {
                 attestationEmise.credentialExchangeId = nouvelleAttestationEmise.credentialExchangeId;
                 attestationEmise.threadId = nouvelleAttestationEmise.threadId;
                 attestationEmise.revoked = false;
-                await this.attestationEmiseService.update(attestationEmise.id, attestationEmise);
+                await this.attestationEmiseService.update(attestationEmise.courriel, attestationEmise);
             } else {
-                nouvelleAttestationEmise.personneId = personne.id;
+                nouvelleAttestationEmise.courriel = personne.courriel;
                 attestationEmise = await this.attestationEmiseService.create(nouvelleAttestationEmise);
             }
        }

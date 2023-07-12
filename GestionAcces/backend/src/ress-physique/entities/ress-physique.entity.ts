@@ -6,7 +6,7 @@ export class RessPhysique {
     @PrimaryGeneratedColumn()
     codeRessPhysique: number; 
 
-    @Column({length: 32})
+    @Column({length: 64})
     localisation: string;
 
     @Column({length: 1})
