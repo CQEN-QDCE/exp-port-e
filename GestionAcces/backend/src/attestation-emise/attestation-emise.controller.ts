@@ -12,23 +12,23 @@ export class AttestationEmiseController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: number) {
-    const attestationEmise = await this.attestationEmiseService.findById(id);
+  async findOne(@Param('courriel') courriel: string) {
+    const attestationEmise = await this.attestationEmiseService.findById(courriel);
     if (!attestationEmise) {
-      throw new NotFoundException(`Attestation émise ${id} n'existe pas.`);
+      throw new NotFoundException(`Attestation émise ${courriel} n'existe pas.`);
     }
     return AttestationEmiseDto.fromEntity(attestationEmise);
   }
 
   @Post(':id/revoke')
-  async revoke(@Param('id') id: number) {
-    const attestationEmise = await this.attestationEmiseService.findById(id);
+  async revoke(@Param('courriel') courriel: string) {
+    const attestationEmise = await this.attestationEmiseService.findById(courriel);
     if (!attestationEmise) {
-      throw new NotFoundException(`Attestation émise ${id} n'existe pas.`);
+      throw new NotFoundException(`Attestation émise ${courriel} n'existe pas.`);
     }
     this.attestationEmiseService.revoke(attestationEmise);
     attestationEmise.revoked = true;
-    this.attestationEmiseService.update(attestationEmise.id, attestationEmise);
+    this.attestationEmiseService.update(attestationEmise.courriel, attestationEmise);
     return AttestationEmiseDto.fromEntity(attestationEmise);
   }
 

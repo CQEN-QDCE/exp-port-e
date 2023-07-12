@@ -2,7 +2,6 @@ import { Personne } from "../entities/personne.entity";
 
 export class PersonneDto {
 
-    id: number;
     courriel: string;  
     nom: string; 
     prenom: string;
@@ -18,7 +17,6 @@ export class PersonneDto {
     static fromEntity(entity: Personne): PersonneDto {
         if (!entity) return null;
         const dto = new PersonneDto();
-        dto.id = entity.id;
         dto.courriel = entity.courriel;
         dto.prenom = entity.prenom;
         dto.nom = entity.nom;
@@ -33,7 +31,6 @@ export class PersonneDto {
     static toEntity(dto: PersonneDto): Personne {
         if (!dto) return null;
         const personne = new Personne();
-        personne.id = dto.id;
         personne.courriel = dto.courriel;
         personne.prenom = dto.prenom;
         personne.nom = dto.nom;

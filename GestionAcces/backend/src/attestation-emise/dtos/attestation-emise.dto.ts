@@ -2,7 +2,7 @@ import { AttestationEmise } from "../entities/attestation-emise.entity";
 
 export class AttestationEmiseDto {
     
-    id: number; 
+    courriel: string; 
     personneId: number; 
     email: string; 
     time: Date; 
@@ -14,7 +14,7 @@ export class AttestationEmiseDto {
     static fromEntity(entity: AttestationEmise): AttestationEmiseDto {
         if (!entity) return null;
         const dto = new AttestationEmiseDto();
-        dto.id = entity.id;
+        dto.courriel = entity.courriel;
         dto.personneId = entity.personneId;
         dto.email = entity.email;
         dto.time = entity.time;

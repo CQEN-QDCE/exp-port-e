@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, PrimaryColumn } from "typeorm";
 
 const EMAIL_MAX_LENGTH = 254;
 
@@ -7,8 +7,8 @@ const GUID_LENGHT = 64;
 @Entity()
 export class AttestationEmise {
 
-    @PrimaryGeneratedColumn()
-    id: number; 
+    @PrimaryColumn({length: EMAIL_MAX_LENGTH})
+    courriel: string; 
 
     @Column({length: EMAIL_MAX_LENGTH})
     email: string; 

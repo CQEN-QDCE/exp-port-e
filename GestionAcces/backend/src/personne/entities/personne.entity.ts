@@ -1,12 +1,9 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn, VersionColumn,  } from "typeorm";
+import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn, VersionColumn,  } from "typeorm";
 
 @Entity()
 export class Personne {
 
-    @PrimaryGeneratedColumn()
-    id: number;
-
-    @Column({length: 64})
+    @PrimaryColumn({length: 64})
     courriel: string;  
 
     @Column({nullable: true, length: 32})
