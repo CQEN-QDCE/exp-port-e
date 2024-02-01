@@ -1,0 +1,420 @@
+######################################################################
+# oc process -f ./nestjs-backend.yaml --param-file=./nestjs-backend.param | oc apply -f -
+######################################################################
+kind: Template
+apiVersion: template.openshift.io/v1
+metadata:
+  name: ${APP_NAME}
+  annotations:
+    description: Outils et services qui facilitent l'émission, la vérification et la gestion d'attestations d'identité numérique basé sur Hyperledger Aries-Indy.
+    tags: CQEN, SQIN, ING, Hyperledger, ARIES, Indy, NestJS, PostgreSql
+objects:
+######################################################################
+# PostgreSql Database
+######################################################################
+- kind: PersistentVolumeClaim
+  apiVersion: v1
+  metadata:
+    name: ${POSTGRESQL_NAME}
+  spec:
+    storageClassName: ${STORAGE_CLASS_NAME}
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: ${POSTGRESQL_VOLUME_SIZE}
+
+- kind: Secret
+  apiVersion: v1
+  metadata:
+    name: ${POSTGRESQL_NAME}
+    annotations:
+      template.openshift.io/expose-database-user: "{.data['database-user']}"
+      template.openshift.io/expose-database-password: "{.data['database-password']}"
+      template.openshift.io/expose-database-admin-user: "{.data['database-admin-user']}"
+      template.openshift.io/expose-database-admin-password: "{.data['database-admin-password']}"
+      template.openshift.io/expose-database-name: "{.data['database-name']}"
+      template.openshift.io/expose-admin-api-key: "{.data['admin-api-key']}"
+  stringData:
+    database-user: "${POSTGRESQL_USERNAME}"
+    database-password: "${POSTGRESQL_PASSWORD}"
+    database-admin-user: "${POSTGRESQL_ADMIN_USERNAME}"
+    database-admin-password: "${POSTGRESQL_ADMIN_PASSWORD}"
+    database-name: "${POSTGRES_DB}"
+
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    name: ${POSTGRESQL_NAME}
+    annotations:
+      template.alpha.openshift.io/wait-for-ready: 'true'
+    labels:
+      app: ${POSTGRESQL_NAME}
+      app.kubernetes.io/part-of: exp-port-e-raccourci
+      app.kubernetes.io/runtime: postgresql
+      app.kubernetes.io/name: postgresql
+  spec:
+    strategy:
+      type: Recreate
+    triggers:
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+        - ${POSTGRESQL_NAME}
+        from:
+          kind: ImageStreamTag
+          name: postgresql:latest
+          namespace: openshift
+        lastTriggeredImage: ''
+    - type: ConfigChange
+    replicas: 1
+    selector:
+      name: ${POSTGRESQL_NAME}
+    template:
+      metadata:
+        labels:
+          name: ${POSTGRESQL_NAME}
+      spec:
+        containers:
+        - name: ${POSTGRESQL_NAME}
+          image: " "
+          ports:
+          - containerPort: ${{POSTGRESQL_PORT}}
+            protocol: TCP
+          env:
+          - name: POSTGRESQL_USER
+            valueFrom:
+              secretKeyRef:
+                name: ${POSTGRESQL_NAME}
+                key: database-user
+          - name: POSTGRESQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: ${POSTGRESQL_NAME}
+                key: database-password
+          - name: POSTGRESQL_DATABASE
+            valueFrom:
+              secretKeyRef:
+                name: ${POSTGRESQL_NAME}
+                key: database-name
+          - name: POSTGRESQL_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: ${POSTGRESQL_NAME}
+                key: database-admin-password                
+          resources:
+            limits:
+              memory: 512Mi
+          volumeMounts:
+          - name: ${POSTGRESQL_NAME}-data
+            mountPath: "/var/lib/pgsql/data"
+          terminationMessagePath: "/dev/termination-log"
+          imagePullPolicy: IfNotPresent
+          capabilities: {}
+          securityContext:
+            capabilities: {}
+            privileged: false
+        volumes:
+        - name: ${POSTGRESQL_NAME}-data
+          persistentVolumeClaim:
+            claimName: ${POSTGRESQL_NAME}
+        restartPolicy: Always
+        dnsPolicy: ClusterFirst
+  status: {}
+
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: ${POSTGRESQL_NAME}
+  spec:
+    ports:
+    - name: ${POSTGRESQL_NAME}
+      protocol: TCP
+      port: ${{POSTGRESQL_PORT}}
+      targetPort: ${{POSTGRESQL_PORT}}
+      nodePort: 0
+    selector:
+      name: ${POSTGRESQL_NAME}
+    type: ClusterIP
+    sessionAffinity: None
+  status:
+    loadBalancer: {}
+
+
+######################################################################
+# NestJS Backend
+######################################################################
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
+    name: ${NESTJS_NAME}
+    labels:
+      app: ${NESTJS_NAME}
+      app.kubernetes.io/part-of: exp-port-e-raccourci
+
+- kind: BuildConfig
+  apiVersion: v1
+  metadata:
+    annotations:
+      app.openshift.io/vcs-uri: ${GITHUB_REPOSITORY_URI}
+      template.alpha.openshift.io/wait-for-ready: "true"
+    labels:
+      app: ${NESTJS_NAME}
+      app.kubernetes.io/part-of: exp-port-e-raccourci
+    name: ${NESTJS_NAME}
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: ${NESTJS_NAME}:latest
+    source:
+      contextDir: ${CONTEXT_SOURCE_DIR}
+      git:
+        uri: ${GITHUB_REPOSITORY_URI}
+        ref: ${GIT_REF}
+      type: Git
+    strategy:
+      dockerStrategy:
+        dockerfilePath: Dockerfile
+      type: Docker
+    triggers:
+      - type: ConfigChange
+
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    name: ${NESTJS_NAME}
+    labels:
+      app: ${NESTJS_NAME}
+      app.kubernetes.io/part-of: exp-port-e-raccourci
+      app.kubernetes.io/runtime: nodejs
+      app.kubernetes.io/name: nodejs
+    annotations:
+      description: Defines how to deploy the application server
+      app.openshift.io/connects-to: >-
+        [{"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${POSTGRESQL_NAME}"},
+        {"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${CONTROLLER_NAME}"},
+        {"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${AGENT_NAME}"}]
+  spec:
+    strategy:
+      type: Rolling
+      rollingParams:
+        updatePeriodSeconds: 1
+        intervalSeconds: 1
+        timeoutSeconds: 600
+        maxUnavailable: 25%
+        maxSurge: 25%
+      resources: {}
+      activeDeadlineSeconds: 21600
+    triggers:
+      - type: ConfigChange
+      - type: ImageChange
+        imageChangeParams:
+          automatic: true
+          containerNames:
+            - ${NESTJS_NAME}
+          from:
+            kind: ImageStreamTag
+            name: "${NESTJS_NAME}:latest"
+    replicas: 1
+    revisionHistoryLimit: 10
+    test: false
+    selector:
+      app: ${NESTJS_NAME}
+    template:
+      metadata:
+        labels:
+          app: ${NESTJS_NAME}
+      spec:
+        containers:
+        - env:
+          - name: MODE
+            value: DEV
+          - name: PORT
+            value: "3000"
+          - name: WEBHOOK_URL
+            value: ${WEBHOOK_URL}
+          - name: AGENT_URL
+            value: ${AGENT_URL}
+          - name: AGENT_API_KEY
+            value: ${AGENT_API_KEY}
+          - name: POSTGRES_DATABASE
+            valueFrom:
+              secretKeyRef:
+                name: ${POSTGRESQL_NAME}
+                key: database-name
+          - name: POSTGRES_HOST
+            value: ${POSTGRESQL_NAME}
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: ${POSTGRESQL_NAME}
+                key: database-password
+          - name: POSTGRES_PORT
+            value: "5432"
+          - name: POSTGRES_DB
+            value: "porte"
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: ${POSTGRESQL_NAME}
+                key: database-user
+          - name: RUN_MIGRATIONS
+            value: "false"
+          name: ${NESTJS_NAME}
+          image: " "
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: Always
+        initContainers:
+        - name: init-db
+          image: busybox
+          command: ['sh', '-c', 'until nc -z ${POSTGRESQL_NAME}:${POSTGRESQL_PORT}; do echo waiting for db; sleep 2; done;']
+        restartPolicy: Always
+        terminationGracePeriodSeconds: 30
+        dnsPolicy: ClusterFirst
+        securityContext: {}
+        schedulerName: default-scheduler
+
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: ${NESTJS_NAME}
+    labels:
+      app: ${NESTJS_NAME}
+      app.kubernetes.io/part-of: exp-port-e-raccourci
+  spec:
+    selector:
+      app: ${NESTJS_NAME}
+    ports:
+      - name: "3000"
+        protocol: TCP
+        port: 3000
+        targetPort: 3000
+
+- kind: Route
+  apiVersion: v1
+  metadata:
+    name: ${APP_NAME}
+    labels:
+      app: ${NESTJS_NAME}
+      app.kubernetes.io/part-of: exp-port-e-raccourci
+  spec:
+    host: ${APP_SUBDOMAIN}.${APP_DOMAIN}
+    to:
+      kind: Service
+      name: ${NESTJS_NAME}
+      weight: 100
+    port:
+      targetPort: 3000
+    tls:
+      termination: edge
+      insecureEdgeTerminationPolicy: None
+    wildcardPolicy: None
+  status:
+    ingress:
+      - host: ${APP_SUBDOMAIN}.${APP_DOMAIN}
+        routerName: default
+        conditions:
+          - type: Admitted
+            status: "True"
+        wildcardPolicy: None
+        routerCanonicalHostname: ${APP_DOMAIN}
+
+######################################################################
+# Parameters
+######################################################################
+parameters:
+- name: APP_NAME
+  displayName: Application name
+  description: Used to group components together in the OpenShift console.
+  required: true
+  value: "exp-port-e-raccourci"
+- name: APP_DOMAIN
+  description: The external hostname to access the application.
+  required: true
+  value: "apps.exp.openshift.cqen.ca"
+- name: APP_SUBDOMAIN
+  description: The external subdomain to access the application.
+  required: true
+  value: "exp-port-e-raccourci"
+
+- name: POSTGRESQL_USERNAME
+  displayName: PostgreSQL connection username
+  description: Username for the PostgreSQL connection user.
+  required: true
+  value: "dbuser"
+- name: POSTGRESQL_PASSWORD
+  displayName: PostgreSQL connection password
+  description: Password for the PostgreSQL connection user.
+  required: true
+  generate: "expression"
+  from: "[a-zA-Z0-9]{16}"
+- name: POSTGRESQL_ADMIN_USERNAME
+  fdisplayName: PostgreSQL administrator username
+  description: Username for the PostgreSQL administrative account.
+  required: true
+  value: "postgres"  
+- name: POSTGRESQL_ADMIN_PASSWORD
+  fdisplayName: PostgreSQL administrator password
+  description: Password for the PostgreSQL administrative account.
+  required: true
+  generate: "expression"
+  from: "[a-zA-Z0-9]{16}"
+- name: POSTGRESQL_DATABASE_NAME
+  displayName: PostgreSQL database name
+  description: Name of the PostgreSQL database.
+  required: true
+  value: "porte"
+- name: POSTGRES_DB
+  displayName: PostgreSQL database name
+  description: Name of the PostgreSQL database.
+  required: true
+  value: "porte"
+- name: POSTGRESQL_PORT
+  displayName: PostgreSQL database port
+  description: Port on which PostgreSQL listens.
+  required: true
+  value: "5432"
+- name: POSTGRESQL_NAME
+  displayName: PostgreSQL name
+  description: The name assigned to all PostgreSQL objects defined in this template.
+  required: true
+  value: "postgres-database"
+
+- name: STORAGE_CLASS_NAME
+  displayNgp2iption: The storage class of the volume.
+  required: true
+  value: gp2
+- name: POSTGRESQL_VOLUME_SIZE
+  displayName: PostgreSql volume size
+  description: The size of the PostgreSql persistent volume, e.g. 512Mi, 1Gi, 2Gi.
+  required: true
+  value: 1Gi
+
+- name: NESTJS_NAME
+  displayName: NestJS name
+  description: The name assigned to all NestJS objects defined in this template.
+  required: true
+  value: "raccourci-js"
+- name: GITHUB_REPOSITORY_URI
+  displayName: GitHub repository URI
+  description: URI of the GitHub repository.
+  required: true
+  value: "https://github.com/CQEN-QDCE/exp-port-e.git"
+- name: CONTEXT_SOURCE_DIR
+  displayName: Context source dir
+  description: Répertoire ou sont les elements pour le build.
+  required: true
+  value: "Raccourcir-URL"
+- name: GIT_REF
+  displayName: Git reference
+  description: Dénomination de la branche que sera utilisée pour le build.
+  required: true
+  value: "features/documentation-rapport"
+  

@@ -1,0 +1,13 @@
+APP_DOMAIN=apps.exp.openshift.cqen.ca
+AGENT_SUBDOMAIN=vc-authn-oidc-verifier
+AGENT_DID_SEED=
+
+ACAPY_LABEL=VC Authn OIDC Verifier
+WALLET_ENCRYPTION_KEY=
+GENESIS_FILE_URL=https://raw.githubusercontent.com/ICCS-ISAC/dtrust-reconu/main/CANdy/dev/pool_transactions_genesis
+
+WEBHOOK_URL=https://vc-authn-oidc.apps.exp.openshift.cqen.ca/<api_key_oidc> 
+
+POSTGRESQL_NAME=acapy-agent-database
+POSTGRESQL_PASSWORD=
+POSTGRESQL_ADMIN_PASSWORD=

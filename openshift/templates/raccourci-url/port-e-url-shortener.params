@@ -1,0 +1,23 @@
+# Config de domaine de l'application 
+
+APP_NAME=exp-port-e-raccourci
+APP_DOMAIN=apps.exp.openshift.cqen.ca
+APP_SUBDOMAIN=p
+
+# Base de données 
+POSTGRESQL_NAME=postgres-database
+POSTGRESQL_PORT=5432
+POSTGRES_DB=porte
+POSTGRESQL_DATABASE_NAME=porte
+# POSTGRESQL_ADMIN_PASSWORD= mot de passe auto-généré par openshift
+POSTGRESQL_ADMIN_USERNAME=postgres
+# POSTGRESQL_PASSWORD= mot de passe auto-généré par openshift
+POSTGRESQL_USERNAME=dbuser
+
+# API 
+NESTJS_NAME=raccourci-js
+
+# Source code 
+GITHUB_REPOSITORY_URI=https://github.com/CQEN-QDCE/exp-port-e.git
+GIT_REF=features/documentation-rapport
+CONTEXT_SOURCE_DIR=Raccourcir-URL

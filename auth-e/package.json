@@ -1,0 +1,27 @@
+{
+    "name": "auth-e",
+    "version": "0.1.0",
+    "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1",
+      "install:backend": "cd backend && npm install",
+      "install:frontend": "cd frontend && npm install",
+      "install:all": "run-s install:backend install:frontend",
+      "build:backend": "cd backend && nest build",
+      "build:frontend": "cd frontend && ng build",
+      "build:all": "run-s build:backend build:frontend",
+      "prepare": "run-s install:all build:all"
+    },
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/foxbike/auth-e.git"
+    },
+    "author": "foxbike (https://github.com/foxbike)",
+    "license": "LiLiQ-R",
+    "bugs": {
+      "url": "https://github.com/foxbike/auth-e.git/issues"
+    },
+    "homepage": "https://github.com/foxbike/auth-e.git#readme",
+    "devDependencies": {
+      "npm-run-all": "^4.1.5"
+    }
+}  

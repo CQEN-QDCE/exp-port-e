@@ -1,0 +1,294 @@
+kind: Template
+apiVersion: template.openshift.io/v1
+metadata:
+  name: anig-demo-exp-att-del
+  annotations:
+    description: Site Web qui émet l'attestation pour les expérimentations d'une attestation délégué.
+    tags: cqen, experimentation, sqin, aries, ANIG
+objects:
+
+#anig-controller
+- kind: ConfigMap
+  apiVersion: v1
+  metadata:
+    name: anig-controller
+  data:
+    config.js: |
+      window.env = {
+        IDENTITY_SCHEMA_NAME: "${IDENTITY_SCHEMA_NAME}",
+        IDENTITY_SCHEMA_VERSION: "${IDENTITY_SCHEMA_VERSION}",
+        AGENT_DID: "${AGENT_DID}",
+        IDENTITY_CREDENTIAL_DEFINITION: "${IDENTITY_CREDENTIAL_DEFINITION}"
+      }
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
+    name: anig-controller
+- kind: BuildConfig
+  apiVersion: v1
+  metadata:
+    annotations:
+      app.openshift.io/vcs-uri: https://github.com/CQEN-QDCE/exp-port-e.git
+      template.alpha.openshift.io/wait-for-ready: "true"
+    labels:
+      app: anig-controller
+      app.kubernetes.io/part-of: ${APP_GROUP}
+    name: anig-controller
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: anig-controller:latest
+    source:
+      contextDir: ANIG-issuer/DEC-controller
+      git:
+        uri: https://github.com/CQEN-QDCE/exp-port-e.git
+        ref: "features/documentation-rapport"
+      type: Git
+    strategy:
+      dockerStrategy:
+        dockerfilePath: Dockerfile
+      type: Docker
+    triggers:
+      - github:
+          secretReference:
+            name: anig-build
+        type: GitHub
+      - type: ConfigChange
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    name: anig-controller
+    labels:
+      app: anig-controller
+      app.kubernetes.io/part-of: ${APP_GROUP}
+  spec:
+    strategy:
+      type: Rolling
+      rollingParams:
+        updatePeriodSeconds: 1
+        intervalSeconds: 1
+        timeoutSeconds: 600
+        maxUnavailable: 25%
+        maxSurge: 25%
+      resources: {}
+      activeDeadlineSeconds: 21600
+    triggers:
+      - github:
+          secretReference:
+            name: anig-build
+        type: GitHub
+      - type: ConfigChange
+      - type: ImageChange
+        imageChangeParams:
+          automatic: true
+          containerNames:
+            - anig-controller
+          from:
+            kind: ImageStreamTag
+            name: "anig-controller:latest"
+    replicas: 1
+    revisionHistoryLimit: 10
+    test: false
+    selector:
+      app: anig-controller
+    template:
+      metadata:
+        labels:
+          app: anig-controller
+          app.kubernetes.io/part-of: ${APP_GROUP}
+      spec:
+        containers:
+          - name: anig-controller
+            env:
+              - name: REACT_APP_ISSUER_HOST_URL
+                value: ${AGENT_ADMIN_ENDPOINT}
+            image: " "
+            volumeMounts:
+              - name: config-volume
+                mountPath: /opt/app-root/src/build/config
+            ports:
+              - containerPort: 10000
+                protocol: TCP
+            resources: {}
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+            imagePullPolicy: Always
+        volumes:
+          - name: config-volume
+            configMap:
+              name: anig-controller
+              items:
+              - key: "config.js"
+                path: "config.js"
+        restartPolicy: Always
+        terminationGracePeriodSeconds: 30
+        dnsPolicy: ClusterFirst
+        securityContext: {}
+        schedulerName: default-scheduler
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: anig-controller
+  spec:
+    selector:
+      app: anig-controller
+    ports:
+      - name: "10000"
+        protocol: TCP
+        port: 10000
+        targetPort: 10000
+- kind: Route
+  apiVersion: v1
+  metadata:
+    name: anig
+  spec:
+    host: exp-anig-controller.apps.exp.openshift.cqen.ca
+    to:
+      kind: Service
+      name: anig-controller
+      weight: 100
+    port:
+      targetPort: 10000
+    tls:
+      termination: edge
+      insecureEdgeTerminationPolicy: None
+    wildcardPolicy: None
+  status:
+    ingress:
+      - host: exp-anig-controller.apps.exp.openshift.cqen.ca
+        routerName: default
+        conditions:
+          - type: Admitted
+            status: "True"
+        wildcardPolicy: None
+        routerCanonicalHostname: apps.exp.openshift.cqen.ca
+
+######################################################################
+# Parameters
+######################################################################
+parameters:
+- name: APP_GROUP
+  displayName: App Group
+  description: The name assigned to all of the deployments in this project.
+  required: true
+  value: Port-E-ID
+- name: GITHUB_WEBHOOK_SECRET
+  description: A secret string used to configure the GitHub webhook for the marketplace app build
+  generate: expression 
+  from: "[a-zA-Z0-9]{40}"
+  required: true
+- name: POSTGRESQL_PASSWORD
+  displayName: PostgreSQL connection password
+  description: Password for the PostgreSQL connection user. Needs to be basee64 encoded.
+  required: true
+  generate: "expression"
+  from: "[a-zA-Z0-9]{16}"
+- name: POSTGRESQL_ADMIN_PASSWORD
+  fdisplayName: PostgreSQL administrator password
+  description: Password for the PostgreSQL administrative account. Needs to be basee64 encoded.
+  required: true
+  generate: "expression"
+  from: "[a-zA-Z0-9]{16}"
+- name: POSTGRESQL_DATABASE_NAME
+  displayName: PostgreSQL database name
+  description: Name of the PostgreSQL database.
+  required: true
+  value: "kms"
+- name: GENESIS_FILE_URL
+  displayName: Genesis file URL
+  description: The URL from which the genesis file can be downloaded.
+  required: true
+  value: https://raw.githubusercontent.com/ICCS-ISAC/dtrust-reconu/main/CANdy/dev/pool_transactions_genesis
+- name: LOG_LEVEL
+  displayName: Log Level
+  description: The logging level of the agent.
+  required: true
+  value: DEBUG
+- name: POSTGRESQL_KMS_HOST
+  displayName: PostgreSql key management service hostname
+  required: true
+  description: Hostname of the deployed PostgreSql key management service.  Only used when KMS_STORAGE_TYPE = postgres_storage.
+  value: anig-kms
+- name: POSTGRESQL_KMS_PORT
+  displayName: PostgreSql key management service port
+  required: true
+  description: The port number of the deployed PostgreSql key management service.  Only used when KMS_STORAGE_TYPE = postgres_storage.
+  value: "5432"
+- name: KMS_STORAGE_TYPE
+  displayName: Key management service storage type
+  description: The key management service storage type.  Your choice of 'postgres_storage' or 'sqlite_storage' at the moment.  If not defined, defaults to 'sqlite_storage' for compatibility.
+  required: false
+  value: postgres_storage
+- name: AGENT_ADMIN_PORT
+  displayName: Agent Admin Port
+  description: The admin port on which the service will listen.
+  required: true
+  value: "3000"
+- name: MASTER_KEY
+  displayName: Master key
+  description: The encryption key to be used for the the key management service.
+  required: true
+  generate: "expression"
+  from: "[a-zA-Z0-9]{16}"
+- name: AGENT_DID_SEED
+  displayName: Agent DID seed.
+  description: Seed used to create the agent DID.
+  required: true
+  value: "000000000000DirecteurEtatCivilQc"
+- name: AGENT_DID
+  displayName: Agent DID
+  description: The public DID associated to the agent.
+  required: false
+  value: "FUKLxsjrYSHgScLbHuPTo4"
+- name: ADMIN_API_KEY
+  displayName: Agent admin API key
+  description: The key used to authenticate client requests to the admin api.
+  required: false
+  value: ""
+- name: KMS_STORAGE_CONFIG
+  displayName: Key management service storage configuration
+  required: true
+  description: The key management service storage configuration.
+  value: '{\"url\":\"${POSTGRESQL_KMS_HOST}:${POSTGRESQL_KMS_PORT}\",\"max_connections\":5}'
+- name: KMS_STORAGE_CREDS
+  displayName: Key management service storage credentials
+  required: true
+  description: The key management service credentials.
+  value: '{\"account\":\"${POSTGRESQL_KMS_USER}\",\"password\":\"${POSTGRESQL_KMS_PASSWORD}\",\"admin_account\":\"${POSTGRESQL_KMS_ADMIN_USER}\",\"admin_password\":\"${POSTGRESQL_KMS_ADMIN_PASSWORD}\"}'
+- name: AGENT_NAME
+  displayName: Agent name
+  description: The name of the agent.
+  required: true
+  value: "Gouvernement_du_Québec"
+- name: AGENT_HTTP_PORT
+  displayName: Agent http port
+  description: The http port on which the service will listen.
+  required: true
+  value: "8000"
+- name: IDENTITY_SCHEMA_NAME
+  displayName: Identity schema name
+  description: The name of the identity schema.
+  required: true
+  value: "Attestation numerique d'identite gouvernementale (EXP)"
+- name: IDENTITY_SCHEMA_VERSION
+  displayName: Identity schema version
+  description: The version of the identity schema.
+  required: true
+  value: "0.0.12"
+- name: IDENTITY_CREDENTIAL_DEFINITION
+  displayName: Credential definition identity
+  description: The credential definition of the identity.
+  required: true
+  value: "FUKLxsjrYSHgScLbHuPTo4:3:CL:33475:ANIG"
+- name: AGENT_ENDPOINT
+  displayName: Agent endpoint
+  description: The endpoint of the agent.
+  required: true
+  value: "https://exp-anig.apps.exp.openshift.cqen.ca"
+- name: AGENT_ADMIN_ENDPOINT
+  displayName: Agent endpoint
+  description: The admin endpoint of the agent.
+  required: true
+  value: "https://exp-anig-admin.apps.exp.openshift.cqen.ca"
+  
