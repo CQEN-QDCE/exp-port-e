@@ -1,0 +1,30 @@
+#===============================================================================
+# Params pour le template nestjs-backend.yaml
+#
+# Remplacer les valeurs de secret des variables suivantes: 
+# 
+# POSTGRESQL_ADMIN_PASSWORD, POSTGRESQL_PASSWORD, AGENT_API_KEY
+#
+# ET au besoin: STORAGE_CLASS_NAME et STORAGE_ACCESS_MODES
+#===============================================================================
+# Identification des objets
+APP_NAME=backend
+APP_GROUP=backend
+APP_DOMAIN=apps.exp.openshift.cqen.ca
+APP_SUBDOMAIN=exp-port-e-backend  # ***
+
+GIT_REF=dev
+
+# Database
+POSTGRESQL_NAME=backend-db
+POSTGRESQL_PASSWORD=    # ***
+POSTGRESQL_ADMIN_PASSWORD=    # ***
+POSTGRESQL_VOLUME_SIZE=1Gi
+
+# Communication avec l'agent
+AGENT_API_KEY=    # ***
+AGENT_URL=https://exp-port-e-issuer-agent-admin.apps.exp.openshift.cqen.ca   # ***
+WEBHOOK_URL=https://port-e-mail.apps.exp.openshift.cqen.ca/webhooks   # ***
+
+# Limites d'Openshift 
+STORAGE_CLASS_NAME=efs-1000

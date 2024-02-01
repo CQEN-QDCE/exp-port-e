@@ -1,0 +1,21 @@
+#===============================================================================
+# Params pour le template nestjs-backend.yaml
+# Le YAML provient du projet git@github.com:CQEN-QDCE/aries-toolkit.git
+#
+# Remplacer les valeurs de secret des variables suivantes: 
+# 
+# POSTGRESQL_ADMIN_PASSWORD, POSTGRESQL_PASSWORD, APP_SUBDOMAIN
+#
+# ET au besoin: STORAGE_CLASS_NAME
+#===============================================================================
+APP_NAME=consommateur
+APP_DOMAIN=apps.exp.openshift.cqen.ca
+APP_SUBDOMAIN=p    # ***
+GIT_REF=prod
+
+POSTGRESQL_NAME=url-courte
+POSTGRESQL_PASSWORD=    # ***
+POSTGRESQL_ADMIN_PASSWORD=    # ***
+POSTGRESQL_VOLUME_SIZE=1Gi
+
+STORAGE_CLASS_NAME=efs-1000

@@ -1,0 +1,13 @@
+# Fichier d'environnement pour l'application controller de l'émmeteur de l'ANIG. 
+# 
+# Path: ANIG-issuer/DEC-controller/env-anig.template
+
+REACT_APP_API_SECRET=""
+REACT_APP_PASSCODE=""
+REACT_APP_ISSUER_HOST_URL=https://exp-anig-admin.apps.exp.openshift.cqen.ca/
+PORT=10000
+
+REACT_APP_SCHEMA_NAME_IDENTITE=""
+REACT_APP_SCHEMA_VERSION_IDENTITE=""
+REACT_APP_SCHEMA_ISSUER_DID_IDENTITE=""
+REACT_APP_CRED_DEF_IDENTITE=""

@@ -1,0 +1,13 @@
+APP_DOMAIN=apps.exp.openshift.cqen.ca
+APP_SUBDOMAIN=vc-authn-oidc
+
+POSTGRESQL_NAME=oidc-controller-database
+POSTGRESQL_PASSWORD=
+POSTGRESQL_VOLUME_SIZE=1Gi
+STORAGE_CLASS_NAME=gp2
+
+OIDC_CONTROLLER_NAME=oidc-controller
+OIDC_CONTROLLER_API_KEY=
+
+GITHUB_REPOSITORY_URI=https://github.com/CQEN-QDCE/vc-authn-oidc.git
+GIT_REF=v1-qc/exp-port-e

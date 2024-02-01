@@ -1,0 +1,191 @@
+######################################################################
+# oc process -f ./omnidb.yaml --param-file=./omnidb.dev.params | oc apply -f -
+######################################################################
+kind: Template
+apiVersion: template.openshift.io/v1
+metadata:
+  name: ${APP_NAME}
+  annotations:
+    description: Outil de gestion de bases de données open-source qui permet aux utilisateurs de gérer plusieurs bases de données (PostgreSQL, MySQL, Oracle, SQLite, etc.) à partir d'une interface web unique.
+    tags:
+objects:
+######################################################################
+# OmniDB
+######################################################################
+- kind: PersistentVolumeClaim
+  apiVersion: v1
+  metadata:
+    name: ${OMNIDB_NAME}-data
+    labels:
+      app: ${OMNIDB_NAME}-data
+      app.kubernetes.io/part-of: gestion-bd
+  spec:
+    storageClassName: ${STORAGE_CLASS_NAME}
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: ${OMNIDB_VOLUME_SIZE}
+
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    name: ${OMNIDB_NAME}
+    annotations:
+      template.alpha.openshift.io/wait-for-ready: 'true'
+    labels:
+      app: ${OMNIDB_NAME}
+      app.kubernetes.io/part-of: gestion-bd
+    annotations:
+      description: Defines how to deploy the application server
+      app.openshift.io/connects-to: >-
+        [{"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${POSTGRESQL_NAME_1}"},
+        {"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${POSTGRESQL_NAME_2}"},
+        {"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${POSTGRESQL_NAME_3}"}, 
+        {"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"url-courte"}, 
+        {"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"nestjs-backend"}, 
+        {"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"wallet-consommateur"}]
+  spec:
+    strategy:
+      type: Recreate
+    replicas: 1
+    selector:
+      name: ${OMNIDB_NAME}
+    template:
+      metadata:
+        labels:
+          name: ${OMNIDB_NAME}
+      spec:
+        containers:
+        - name: ${OMNIDB_NAME}
+          image: "taivokasper/omnidb:latest"
+          ports:
+          - containerPort: ${{OMNIDB_PORT}}
+            protocol: TCP
+          volumeMounts:
+          - name: ${OMNIDB_NAME}-data
+            mountPath: "/etc/omnidb"
+          terminationMessagePath: "/dev/termination-log"
+          imagePullPolicy: ""
+          capabilities: {}
+          securityContext:
+            capabilities: {}
+            privileged: false
+        volumes:
+        - name: ${OMNIDB_NAME}-data
+          persistentVolumeClaim:
+            claimName: ${OMNIDB_NAME}-data
+        restartPolicy: Always
+        dnsPolicy: ClusterFirst
+  status: {}
+
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: ${OMNIDB_NAME}
+    labels:
+      app: ${OMNIDB_NAME}
+      app.kubernetes.io/part-of: gestion-bd
+  spec:
+    ports:
+    - name: ${OMNIDB_NAME}
+      protocol: TCP
+      port: ${{OMNIDB_PORT}}
+      targetPort: ${{OMNIDB_PORT}}
+      nodePort: 0
+    selector:
+      name: ${OMNIDB_NAME}
+    type: ClusterIP
+    sessionAffinity: None
+  status:
+    loadBalancer: {}
+
+- kind: Route
+  apiVersion: v1
+  metadata:
+    name: ${OMNIDB_NAME}
+    labels:
+      app: ${OMNIDB_NAME}
+      app.kubernetes.io/part-of: gestion-bd
+  spec:
+    host: ${APP_SUBDOMAIN}.${APP_DOMAIN}
+    to:
+      kind: Service
+      name: ${OMNIDB_NAME}
+      weight: 100
+    port:
+      targetPort: ${{OMNIDB_PORT}}
+    tls:
+      termination: edge
+      insecureEdgeTerminationPolicy: None
+    wildcardPolicy: None
+  status:
+    ingress:
+      - host: ${APP_SUBDOMAIN}.${APP_DOMAIN}
+        routerName: default
+        conditions:
+          - type: Admitted
+            status: "True"
+        wildcardPolicy: None
+        routerCanonicalHostname: ${APP_DOMAIN}
+
+######################################################################
+# Parameters
+######################################################################
+parameters:
+- name: APP_NAME
+  displayName: Application name
+  description: Used to group components together in the OpenShift console.
+  required: true
+  value: "omnidb"
+- name: APP_DOMAIN
+  description: The external hostname to access the application.
+  required: true
+- name: APP_SUBDOMAIN
+  description: The external subdomain to access the application.
+  required: true
+  value: "omnidb"
+- name: OMNIDB_NAME
+  displayName: OmniDB name
+  description: The name assigned to all OmniDB objects defined in this template.
+  required: true
+  value: "omnidb"
+- name: STORAGE_CLASS_NAME
+  displayNgp2iption: The storage class of the volume.
+  required: true
+  value: gp2
+- name: OMNIDB_VOLUME_SIZE
+  displayName: OmniDB volume size
+  description: The size of the OmniDB persistent volume, e.g. 512Mi, 1Gi, 2Gi.
+  required: true
+  value: 128Mi
+- name: OMNIDB_PORT
+  displayName: OmniDB port
+  description: Port on which OmniDB listens.
+  required: true
+  value: "8080"
+- name: POSTGRESQL_NAME_1
+  displayName: PostgreSQL name
+  description: The name assigned to all PostgreSQL objects defined in this template.
+  required: true
+  value: "backend-db"
+- name: POSTGRESQL_NAME_2
+  displayName: PostgreSQL name
+  description: The name assigned to all PostgreSQL objects defined in this template.
+  required: true
+  value: "controller-db"
+- name: POSTGRESQL_NAME_3
+  displayName: PostgreSQL name
+  description: The name assigned to all PostgreSQL objects defined in this template.
+  required: true
+  value: "wallet"
+- name: POSTGRESQL_NAME_4
+  displayName: PostgreSQL name
+  description: The name assigned to all PostgreSQL objects defined in this template.
+  required: true
+  value: "url-courte"
+- name: POSTGRESQL_NAME_5
+  displayName: PostgreSQL name
+  description: The name assigned to all PostgreSQL objects defined in this template.
+  required: true
+  value: "nestjs-backend"

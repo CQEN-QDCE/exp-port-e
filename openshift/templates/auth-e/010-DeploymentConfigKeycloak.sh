@@ -1,0 +1,1 @@
+oc process -f ./auth-e-keycloak-realm.yaml --param-file=./auth-e.dev.params.env | oc apply -f -

@@ -1,0 +1,24 @@
+#===============================================================================
+# Params pour le template port-e-daemon.yaml
+#
+# Remplacer les valeurs de secret des variables suivantes: 
+# 
+# X_API_KEY
+#
+#===============================================================================
+# Configuration build/deploy openshift
+APP_NAME=consommateur
+APP_DOMAIN=apps.exp.openshift.cqen.ca
+APP_SUBDOMAIN=port-e-daemon
+GIT_REF=features/url-courte
+CONTEXT_SOURCE_DIR=VerifierPhysique/daemon
+
+# Configuration de l'application
+BASE_URL            = https://exp-port-e-consommateur-agent-admin.apps.exp.openshift.cqen.ca   # ***
+# Laisser le slash de la fin de ligne du base_short_url, cela fait partie de la composition de l'adresse genéré
+BASE_SHORT_URL      = https://p.apps.exp.openshift.cqen.ca/
+HOST_PORTE_URL      = http://ngrok.io
+ENDPOINT_CONNECTION = /connections/create-invitation
+ENDPOINT_INVITATION = /present-proof/send-request
+APP_PORT            = 3000
+X_API_KEY           =     # ***

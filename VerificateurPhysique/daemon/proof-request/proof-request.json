@@ -1,0 +1,36 @@
+{
+    "@type": "https://didcomm.org/present-proof/1.0/request-presentation",
+    "@id": "proof-request-email-cqen",
+    "comment": "Merci de partager votre courriel CQEN",
+    "request_presentations~attach": [
+    {
+        "@id": "libindy-request-presentation-0",
+        "mime-type": "application/json",
+        "data": {
+        "requested_attributes": {
+            "email": {
+            "name": "email",
+            "restrictions": [
+                {
+                "cred_def_id": "<ID_da_definição_de_credencial>",
+                "schema_key": {
+                    "name": "<nome_do_esquema>",
+                    "version": "<versão_do_esquema>",
+                    "did": "<DID_do_dono_do_esquema>"
+                }
+                }
+            ]
+            }
+        },
+        "requested_predicates": {}
+        }
+    }
+    ],
+    "service": [
+    {
+        "recipientKeys": ["<sua_chave_pública>"],
+        "routingKeys": [],
+        "serviceEndpoint": "<URL_do_endpoint_do_agente>"
+    }
+    ]
+}
