@@ -1,0 +1,1 @@
+oc process -f ./anig-template.yaml | oc apply -f -

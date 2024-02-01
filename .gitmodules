@@ -1,0 +1,6 @@
+[submodule "indy-email-verification"]
+	path = indy-email-verification
+	url = https://github.com/CQEN-QDCE/indy-email-verification.git
+[submodule "aries-toolkit"]
+	path = aries-toolkit
+	url = https://github.com/CQEN-QDCE/aries-toolkit.git

@@ -1,0 +1,419 @@
+######################################################################
+# oc process -f ./vc-authn-oidc.yaml --param-file=./vc-authn-oidc.dev.params | oc apply -f -
+######################################################################
+kind: Template
+apiVersion: template.openshift.io/v1
+metadata:
+  name: ${APP_NAME}
+  annotations:
+    description: Outils et services qui facilitent l'émission, la vérification et la gestion d'attestations d'identité numérique basé sur Hyperledger Aries-Indy.
+    tags: CQEN, SQIN, ING, Hyperledger, ARIES, Indy, Angular, NestJS, PostgreSql
+objects:
+######################################################################
+# PostgreSql Database
+######################################################################
+- kind: PersistentVolumeClaim
+  apiVersion: v1
+  metadata:
+    name: ${POSTGRESQL_NAME}
+  spec:
+    storageClassName: ${STORAGE_CLASS_NAME}
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: ${POSTGRESQL_VOLUME_SIZE}
+- kind: Secret
+  apiVersion: v1
+  metadata:
+    name: ${POSTGRESQL_NAME}
+    annotations:
+      template.openshift.io/expose-database-user: "{.data['database-user']}"
+      template.openshift.io/expose-database-password: "{.data['database-password']}"
+      template.openshift.io/expose-database-admin-user: "{.data['database-admin-user']}"
+      template.openshift.io/expose-database-admin-password: "{.data['database-admin-password']}"
+      template.openshift.io/expose-database-name: "{.data['database-name']}"
+      template.openshift.io/expose-admin-api-key: "{.data['admin-api-key']}"
+  stringData:
+    database-user: "${POSTGRESQL_USERNAME}"
+    database-password: "${POSTGRESQL_PASSWORD}"
+    database-admin-user: "${POSTGRESQL_ADMIN_USERNAME}"
+    database-admin-password: "${POSTGRESQL_ADMIN_PASSWORD}"
+    database-name: "${POSTGRESQL_DATABASE_NAME}"
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    name: ${POSTGRESQL_NAME}
+    annotations:
+      template.alpha.openshift.io/wait-for-ready: 'true'
+    labels:
+      app: ${POSTGRESQL_NAME}
+      app.kubernetes.io/part-of: ${APP_GROUP}
+  spec:
+    strategy:
+      type: Recreate
+    triggers:
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+        - ${POSTGRESQL_NAME}
+        from:
+          kind: ImageStreamTag
+          name: postgresql:10-el8
+          namespace: openshift
+        lastTriggeredImage: ''
+    - type: ConfigChange
+    replicas: 1
+    selector:
+      name: ${POSTGRESQL_NAME}
+    template:
+      metadata:
+        labels:
+          name: ${POSTGRESQL_NAME}
+      spec:
+        containers:
+        - name: ${POSTGRESQL_NAME}
+          image: " "
+          ports:
+          - containerPort: ${{POSTGRESQL_PORT}}
+            protocol: TCP
+          env:
+          - name: POSTGRESQL_USER
+            valueFrom:
+              secretKeyRef:
+                name: ${POSTGRESQL_NAME}
+                key: database-user
+          - name: POSTGRESQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: ${POSTGRESQL_NAME}
+                key: database-password
+          - name: POSTGRESQL_DATABASE
+            valueFrom:
+              secretKeyRef:
+                name: ${POSTGRESQL_NAME}
+                key: database-name
+          - name: POSTGRESQL_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: ${POSTGRESQL_NAME}
+                key: database-admin-password                
+          resources:
+            limits:
+              memory: 512Mi
+          volumeMounts:
+          - name: ${POSTGRESQL_NAME}-data
+            mountPath: "/var/lib/pgsql/data"
+          terminationMessagePath: "/dev/termination-log"
+          imagePullPolicy: IfNotPresent
+          capabilities: {}
+          securityContext:
+            capabilities: {}
+            privileged: false
+        volumes:
+        - name: ${POSTGRESQL_NAME}-data
+          persistentVolumeClaim:
+            claimName: ${POSTGRESQL_NAME}
+        restartPolicy: Always
+        dnsPolicy: ClusterFirst
+  status: {}
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: ${POSTGRESQL_NAME}
+  spec:
+    ports:
+    - name: ${POSTGRESQL_NAME}
+      protocol: TCP
+      port: ${{POSTGRESQL_PORT}}
+      targetPort: ${{POSTGRESQL_PORT}}
+      nodePort: 0
+    selector:
+      name: ${POSTGRESQL_NAME}
+    type: ClusterIP
+    sessionAffinity: None
+  status:
+    loadBalancer: {}
+######################################################################
+# VC Auth Controller
+######################################################################
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
+    name: ${OIDC_CONTROLLER_NAME}
+- kind: BuildConfig
+  apiVersion: v1
+  metadata:
+    annotations:
+      app.openshift.io/vcs-uri: ${GITHUB_REPOSITORY_URI}
+      template.alpha.openshift.io/wait-for-ready: "true"
+    labels:
+      app: ${OIDC_CONTROLLER_NAME}
+    name: ${OIDC_CONTROLLER_NAME}
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: ${OIDC_CONTROLLER_NAME}:latest
+    source:
+      git:
+        uri: ${GITHUB_REPOSITORY_URI}
+        ref: ${GIT_REF}
+      type: Git
+    strategy:
+      dockerStrategy:
+        dockerfilePath: docker/oidc-controller/Dockerfile
+      type: Docker
+    triggers:
+      - type: ConfigChange
+- kind: Secret
+  apiVersion: v1
+  metadata:
+    name: ${OIDC_CONTROLLER_NAME}
+    annotations:
+      template.openshift.io/expose-database-user: "{.data['api-key']}"
+  stringData:
+    api-key: "${OIDC_CONTROLLER_API_KEY}"
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    name: ${OIDC_CONTROLLER_NAME}
+    labels:
+      app: ${OIDC_CONTROLLER_NAME}
+      app.kubernetes.io/part-of: ${APP_GROUP}
+  spec:
+    strategy:
+      type: Rolling
+      rollingParams:
+        updatePeriodSeconds: 1
+        intervalSeconds: 1
+        timeoutSeconds: 600
+        maxUnavailable: 25%
+        maxSurge: 25%
+      resources: {}
+      activeDeadlineSeconds: 21600
+    triggers:
+      - github:
+          secretReference:
+            name: vc-authn-oidc-build
+        type: GitHub
+      - type: ConfigChange
+      - type: ImageChange
+        imageChangeParams:
+          automatic: true
+          containerNames:
+            - ${OIDC_CONTROLLER_NAME}
+          from:
+            kind: ImageStreamTag
+            name: "${OIDC_CONTROLLER_NAME}:latest"
+    replicas: 1
+    revisionHistoryLimit: 10
+    test: false
+    selector:
+      app: ${OIDC_CONTROLLER_NAME}
+    template:
+      metadata:
+        labels:
+          app: ${OIDC_CONTROLLER_NAME}
+      spec:
+        containers:
+        - args:
+          - /bin/bash
+          - -c
+          - 'dotnet VCAuthn.dll'
+          env:
+          - name: ASPNETCORE_URLS
+            value: "${ASPNETCORE_URLS}"
+          - name: ACAPY__AdminURLApiKey
+          - name: ACAPY__AdminUrl
+          - name: ACAPY__AgentUrl
+          - name: ApiKey
+            valueFrom:
+              secretKeyRef:
+                name: ${OIDC_CONTROLLER_NAME}
+                key: api-key
+          - name: IdentityServer__ConnectionStrings__Database
+            value: Host=${POSTGRESQL_NAME};Port=5432;Database=${POSTGRESQL_DATABASE_NAME};Username=${POSTGRESQL_USERNAME};Password=${POSTGRESQL_PASSWORD};
+          - name: IdentityServer__PollInterval
+            value: ${OIDC_CONTROLLER_POLL_INTERVAL}
+          - name: IdentityServer__PublicOrigin
+            value: https://${APP_SUBDOMAIN}.${APP_DOMAIN}
+          - name: SessionStorageService__ConnectionStrings_Database
+            value: Host=${POSTGRESQL_NAME};Port=5432;Database=${POSTGRESQL_DATABASE_NAME};Username=${POSTGRESQL_USERNAME};Password=${POSTGRESQL_PASSWORD};
+          - name: SwaggerEnabled
+            value: "True"
+          - name: UrlShortenerService__BaseUrl
+            value: https://${APP_SUBDOMAIN}.${APP_DOMAIN}/url
+          - name: UrlShortenerService__ConnectionStrings__Database
+            value: Host=${POSTGRESQL_NAME};Port=5432;Database=${POSTGRESQL_DATABASE_NAME};Username=${POSTGRESQL_USERNAME};Password=${POSTGRESQL_PASSWORD};
+          - name: POSTGRES_DATABASE
+            valueFrom:
+              secretKeyRef:
+                name: ${POSTGRESQL_NAME}
+                key: database-name
+          - name: POSTGRES_HOST
+            value: ${POSTGRESQL_NAME}
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: ${POSTGRESQL_NAME}
+                key: database-password
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: ${POSTGRESQL_NAME}
+                key: database-user
+          name: ${OIDC_CONTROLLER_NAME}
+          image: " "
+          ports:
+            - containerPort: 5000
+              protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: Always
+        initContainers:
+        - name: init-db
+          image: busybox
+          command: ['sh', '-c', 'until nc -z ${POSTGRESQL_NAME}:${POSTGRESQL_PORT}; do echo waiting for db; sleep 2; done;']
+        restartPolicy: Always
+        terminationGracePeriodSeconds: 30
+        dnsPolicy: ClusterFirst
+        securityContext: {}
+        schedulerName: default-scheduler
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: ${OIDC_CONTROLLER_NAME}
+  spec:
+    selector:
+      app: ${OIDC_CONTROLLER_NAME}
+    ports:
+      - name: "5000"
+        protocol: TCP
+        port: 5000
+        targetPort: 8080
+- kind: Route
+  apiVersion: v1
+  metadata:
+    name: ${APP_NAME}
+  spec:
+    host: ${APP_SUBDOMAIN}.${APP_DOMAIN}
+    to:
+      kind: Service
+      name: ${OIDC_CONTROLLER_NAME}
+      weight: 100
+    port:
+      targetPort: 5000
+    tls:
+      termination: edge
+      insecureEdgeTerminationPolicy: None
+    wildcardPolicy: None
+  status:
+    ingress:
+      - host: ${APP_SUBDOMAIN}.${APP_DOMAIN}
+        routerName: default
+        conditions:
+          - type: Admitted
+            status: "True"
+        wildcardPolicy: None
+        routerCanonicalHostname: ${APP_DOMAIN}
+######################################################################
+# Parameters
+######################################################################
+parameters:
+- name: APP_NAME
+  displayName: Application name
+  description: Used to group components together in the OpenShift console.
+  required: true
+  value: "vc-authn-oidc"
+- name: APP_GROUP
+  displayName: App Group
+  description: Used to group components together.
+  required: true
+  value: 'Port-E-Auth-IdP'
+- name: APP_DOMAIN
+  description: The external hostname to access the application.
+  required: true
+- name: APP_SUBDOMAIN
+  description: The external subdomain to access the application.
+  required: true
+  value: "vc-authn-oidc"
+- name: POSTGRESQL_USERNAME
+  displayName: PostgreSQL connection username
+  description: Username for the PostgreSQL connection user.
+  required: true
+  value: "dbuser"
+- name: POSTGRESQL_PASSWORD
+  displayName: PostgreSQL connection password
+  description: Password for the PostgreSQL connection user.
+  required: true
+  generate: "expression"
+  from: "[a-zA-Z0-9]{16}"
+- name: POSTGRESQL_ADMIN_USERNAME
+  fdisplayName: PostgreSQL administrator username
+  description: Username for the PostgreSQL administrative account.
+  required: true
+  value: "postgres"  
+- name: POSTGRESQL_ADMIN_PASSWORD
+  fdisplayName: PostgreSQL administrator password
+  description: Password for the PostgreSQL administrative account.
+  required: true
+  generate: "expression"
+  from: "[a-zA-Z0-9]{16}"
+- name: POSTGRESQL_DATABASE_NAME
+  displayName: PostgreSQL database name
+  description: Name of the PostgreSQL database.
+  required: true
+  value: "vc-authn-oidc"
+- name: POSTGRESQL_PORT
+  displayName: PostgreSQL database port
+  description: Port on which PostgreSQL listens.
+  required: true
+  value: "5432"
+- name: POSTGRESQL_NAME
+  displayName: PostgreSQL name
+  description: The name assigned to all PostgreSQL objects defined in this template.
+  required: true
+  value: "controller-database"
+- name: STORAGE_CLASS_NAME
+  displayNgp2iption: The storage class of the volume.
+  required: true
+  value: gp2
+- name: POSTGRESQL_VOLUME_SIZE
+  displayName: PostgreSql volume size
+  description: The size of the PostgreSql persistent volume, e.g. 512Mi, 1Gi, 2Gi.
+  required: true
+  value: 1Gi
+- name: OIDC_CONTROLLER_NAME
+  displayName: OIDC Controller name
+  description: The name assigned to all OIDC controller objects defined in this template.
+  required: true
+  value: "oidc-controller"
+- name: GITHUB_REPOSITORY_URI
+  displayName: GitHub repository URI
+  description: URI of the GitHub repository.
+  required: true
+- name: GIT_REF
+  displayName: Git Reference
+  description: The git reference or branch.
+  required: true
+  value: debug
+  value: "https://github.com/bcgov/vc-authn-oidc.git"
+- name: ASPNETCORE_URLS
+  displayName: ASP.Net Core URLs
+  description: ASP.Net Core URLs.
+  required: true
+  value: http://*:8080
+- name: OIDC_CONTROLLER_POLL_INTERVAL
+  displayName: OIDC controller poll intervall
+  description: Interval at which the OIDC controller is polled (in milliseconds).
+  required: true
+  value: "2000"
+- name: OIDC_CONTROLLER_API_KEY
+  displayName: OIDC controller API key
+  description: API key to access the OIDC controller.
+  required: true
+  generate: "expression"
+  from: "[a-zA-Z0-9]{16}"

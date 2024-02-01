@@ -1,0 +1,60 @@
+#===============================================================================
+# Params pour le template controller-port-e-deploy.yaml
+# 
+# Remplacer les valeurs de secret des variables suivantes: 
+# 
+# ADMIN_API_KEY, SMTP_EMAIL_HOST, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD
+#
+#===============================================================================
+NAMESPACE_NAME=port-e-1
+IMAGE_NAMESPACE=port-e-1
+APP_NAME=controller
+APP_GROUP=emetteur
+SUFFIX=-port-e
+ROLE=service
+TAG_NAME=latest
+ENV_NAME=dev
+IMAGE_NAME=controller-port-e
+APP_MODULE=email_verification_service.wsgi
+APP_CONFIG=python:email_verification_service.settings
+WEB_CONCURRENCY=1
+PORT=8080
+
+APPLICATION_DOMAIN=exp-porte-service-verification-courriel.apps.exp.openshift.cqen.ca   # ***
+SITE_URL=https://exp-porte-service-verification-courriel.apps.exp.openshift.cqen.ca     # ***
+
+#  Agent de communication
+AGENT_ADMIN_API_KEY=    # ***
+AGENT_ROLE=agent
+AGENT_SERVICE_NAME=agent
+AGENT_URL=https://exp-port-e-issuer-agent-admin.apps.exp.openshift.cqen.ca              # ***
+
+# Database 
+POSTGRESQL_NAME=controller-db
+POSTGRESQL_DATABASE_NAME=aries_issuer
+POSTGRESQL_PORT=5432
+POSTGRESQL_USER=    # ***
+POSTGRESQL_PASSWORD=    # ***
+POSTGRESQL_ADMIN_PASSWORD=    # ***
+POSTGRESQL_IMAGE=database
+POSTGRESQL_TAG=10-el8
+
+# Email server 
+SMTP_EMAIL_HOST=email-smtp.ca-central-1.amazonaws.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+# (DEV) 
+    #EMAIL_HOST_USER=""    # ***
+    #EMAIL_HOST_PASSWORD=""    # ***
+    #DEFAULT_FROM_EMAIL = 'ne-pas-repondre@asea.cqen.ca'
+# (PROD) 
+EMAIL_HOST_USER=""    # ***
+EMAIL_HOST_PASSWORD=""    # ***
+DEFAULT_FROM_EMAIL = 'ne-pas-repondre@cqen.ca'
+
+# Limites d'Openshift 
+CPU_REQUEST=10m
+CPU_LIMIT=250m
+MEMORY_REQUEST=10Mi
+MEMORY_LIMIT=1Gi
+STORAGE_CLASS_NAME=efs-1000

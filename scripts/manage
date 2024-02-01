@@ -1,0 +1,508 @@
+#!/bin/bash 
+#
+#  Copyright (c) 2023 Gouvernement du Québec
+#  Auteur: Julio Cesar Torres (torjc01)
+#  SPDX-License-Identifier: LiLiQ-R-v.1.1
+#  License-Filename: /LICENSE
+#
+set -e 
+
+echo "*** ------------------------------------ ***"
+echo "***  Commande de gestion des opérations  ***"
+echo "*** ------------------------------------ ***"
+
+SCRIPT_HOME="$( cd "$( dirname "$0" )" && pwd )"
+# echo "[DEBUG] SCRIPT_HOME " $SCRIPT_HOME
+
+function echoError (){
+  _msg=${1}
+  _red='\e[31m'
+  _nc='\e[0m' # No Color
+  echo -e "${_red}${_msg}${_nc}"
+}
+
+function echoWarning (){
+  _msg=${1}
+  _yellow='\e[33m'
+  _nc='\e[0m' # No Color
+  echo -e "${_yellow}${_msg}${_nc}"
+}
+
+function isInstalled () {
+  rtnVal=$(type "$1" >/dev/null 2>&1)
+  rtnCd=$?
+  if [ ${rtnCd} -ne 0 ]; then
+    return 1
+  else
+    return 0
+  fi
+}
+
+function isS2iInstalled () {
+  S2I_EXE=s2i
+  if ! isInstalled ${S2I_EXE}; then
+    echoError "L'exécutable ${S2I_EXE} est requis mais il n'est pas dans votre path." 
+    echoError "Il peut être téléchargé à partir de: https://github.com/openshift/source-to-image/releases"
+    echoError "Assurez-vous d'extraire le binaire dans un répertoire dans votre path."
+    exit 1
+  fi
+}
+
+function isJQInstalled () {
+  JQ_EXE=jq
+  if ! isInstalled ${JQ_EXE}; then
+    echoError "L'exécutable ${JQ_EXE} est requis mais il n'est pas dans votre path."
+    echoError "Il peut être téléchargé à partir de: https://stedolan.github.io/jq/download"
+    exit 1
+  fi
+}
+
+function isCurlInstalled () {
+  CURL_EXE=curl
+  if ! isInstalled ${CURL_EXE}; then
+    echoError "L'exécutable ${CURL_EXE} est requis mais il n'est pas dans votre path."
+    echoError "Si votre shell ne vient pas avec curl installé, essayez de l'installer via apt install (Linux), [Homebrew](https://brew.sh/) (MAC) ou [Chocolatey](https://chocolatey.org/) (Windows)."
+    exit 1
+  fi
+}
+
+function isNgrokInstalled () {
+  NGROK_EXE=ngrok
+  if ! isInstalled ${NGROK_EXE}; then
+    echoError "L'executable de ${NGROK_EXE} est requis mais il n'est pas dans votre path."
+    echoError "il peut être téléchargé à partir du site:: https://ngrok.com/download"
+    exit 1
+  fi
+}
+
+function isOcInstalled () {
+  OC_EXE=oc
+  if ! isInstalled ${OC_EXE}; then
+    echoError "L'executable de ${OC_EXE} est requis mais il n'est pas dans votre path."
+    echoError "Il peut être téléchargé à partir du site [Getting staarted with the Openshift CLI](https://docs.openshift.com/container-platform/4.8/cli_reference/openshift_cli/getting-started-cli.html)."
+    exit 1
+  fi
+}
+
+function checkNgrokTunnelActive () {
+  if [ -z "${SITE_URL}" ]; then
+    echoError "Il semble que le tunnel ngrok n'est pas activé."
+    echoError "Merci d'ouvrir un autre shell dans le répertoire de scripts et exécuter `./manage ngrok-start <adresse IP> <port>` avant de réessayer." 
+    exit 1
+  fi
+}
+
+#
+# Change les letres majuscules en lettres minuscules
+#
+function toLower(){
+    echo $(echo ${@} | tr '[:upper:]' '[:lower:]')
+}
+
+#
+# Change les lettres minuscules en majuscules
+#
+function toUpper(){
+    echo $(echo ${@} | tr '[:lower:]' '[:upper:]')
+}
+
+
+# =============================================================================
+#  usage()
+# =============================================================================
+usage () {
+  cat <<-EOF
+
+
+    manage(1)                                                  User Commands                                                  manage(1)
+
+    NAME
+        manage - commande de gestion des opérations.
+
+
+    SYNOPSIS
+        $0 [commande] [options]
+
+
+    DESCRIPTION
+
+
+        backup-env
+                Fait le backup des fichiers d'environnement dans le repertoire backup-env/.
+                Si le repertoire n'existe pas, il sera créé.
+
+        creer <nom_projet>
+                Créé le projet sur openshift et y déploie les templates de l'application.
+                Obligatoire: renseignez le nom du projet en paramètre.
+
+        deploy
+                Fait le déploy des templates vers Openshift.
+
+        down
+                Détruit tous les services et supprimme les volumes (storage) et containeurs.
+
+        help
+                Affiche cette documentation.
+
+        init-env
+                Réalise la création des fichiers d'environnement de l'application.
+
+        logs
+                Montre les logs de docker compose run (ctrl-c pour sortir).
+
+        ngrok-start <adresse IP> <port>
+                Démarre un tunnel ngrok. Passez l'adresse IP (obligatoire) auquel l'application est rattachée
+                et le port (optionnel) qui répondra aux requêtes.
+
+                Ensuite, on enregistre le tunnel dans une variable d'environnement appellée HOST_TUNNEL
+                au pod Openshift du daemon.
+
+                Obligatoire: adresse IP de l'application qui sera tunnelée.
+
+                Optionnel: le port rattachée à l'application. Si le port n'est pas renseigné, le port 80 est
+                assumé par default.
+
+        restore-env
+                Restaure les fichiers d'environnement en pris en backup. Ils doivent être présents dans le
+                repertoire backup-env/ avant l'appel à la commande.
+
+        start
+                Créé les conteineurs de l'application des images buildés et démarre les services basés sur
+                le fichier docker-compose.yml.
+
+                Vous pouvez passer la liste de conteineurs à démarrer.
+                Par défault tous les containeurs seront démarrés.
+
+        stop
+                Arrête les services.  Ceci est un processus non destructif. Les volumes et containeurs
+                ne sont pas supprimés et ils seront réutilisés la prochaine fois que vous faites run start.
+
+        up
+                Le même que start.
+
+        [command] [options]
+                Toute commande et option qui peut être executée par le shell du container.
+
+EOF
+exit 1
+}
+
+# =============================================================================
+#  Functions:
+# =============================================================================
+
+#
+# Backup des fichiers d'environnement
+#
+function backup-env(){
+    echo "Réalise le backup des fichiers d'environnement"
+
+    BASE_PATH=${PWD%/*}   # recupère le repertoire racine du projet
+
+    mkdir -p $BASE_PATH/backup-env
+
+    cp $BASE_PATH/openshift/templates/anig/anig-issuer.candy-dev.params.env                                 $BASE_PATH/backup-env/anig-issuer.candy-dev.params.env 
+    cp $BASE_PATH/openshift/templates/issuer/agent/aries-issuer.candy-dev.params.env                        $BASE_PATH/backup-env/aries-issuer.candy-dev.params.env
+    cp $BASE_PATH/openshift/templates/issuer/backend/nestjs.backend-dev.params.env                          $BASE_PATH/backup-env/nestjs.backend-dev.params.env
+    cp $BASE_PATH/openshift/templates/issuer/controller/controller-port-e-build.params.env                  $BASE_PATH/backup-env/controller-port-e-build.params.env
+    cp $BASE_PATH/openshift/templates/issuer/controller/controller-port-e-deploy.params.env                 $BASE_PATH/backup-env/controller-port-e-deploy.params.env
+    cp $BASE_PATH/openshift/templates/verificateur-physique/agent/aries-consommateur.candy-dev.params.env   $BASE_PATH/backup-env/aries-consommateur.candy-dev.params.env
+    cp $BASE_PATH/openshift/templates/verificateur-physique/daemon/port-e-daemon.params.env                 $BASE_PATH/backup-env/port-e-daemon.params.env
+    cp $BASE_PATH/openshift/templates/verificateur-physique/url-courte/port-e-url-courte.params.env         $BASE_PATH/backup-env/port-e-url-courte.params.env
+    cp $BASE_PATH/VerificateurPhysique/firmware/Port-e-daemon/arduino_secrets.h                             $BASE_PATH/backup-env/arduino_secrets.h
+    cp $BASE_PATH/VerificateurPhysique/daemon/.env                                                          $BASE_PATH/backup-env/env-daemon
+    cp $BASE_PATH/ANIG-issuer/DEC-controller/.env                                                           $BASE_PATH/backup-env/env-anig-issuer
+    cp $BASE_PATH/auth-e/backend/.env                                                                       $BASE_PATH/backup-env/env-auth-e-backend
+
+    # Observer la destination, sans suffixer avec de wildcards; cela pour inclure un fichier caché, c-à-d .env
+    tar -czvf ../backup-env/backup-env.tar.gz ../backup-env  
+
+    echo "Fin du backup"
+}
+
+# ------------------------------------------
+#  Crée un nouveau projet selon le paramètre reçu en option
+# ------------------------------------------
+function creer(){
+  if [ -z $1 ]; then 
+      echoError "Erreur: sans paramètre. "
+      echoError "Utilisation: ./manage creer <nom_projet>"
+  else 
+      NOME=$1
+      echo "Création du projet" $NOME "en cours."
+      cd ../openshift/templates/issuer 
+      sed -i 's/NOM_PROJET/'$NOME'/g' project.yaml
+      sed -i 's/NOM_PROJET/'$NOME'/g' 000-CreateProject.sh 
+      sh ./000-CreateProject.sh
+
+      # Remettre les valeurs par default 
+      sed -i 's/'$NOME'/NOM_PROJET/g' project.yaml
+      sed -i 's/'$NOME'/NOM_PROJET/g' 000-CreateProject.sh 
+  fi
+}
+
+# ------------------------------------------
+# Deploie l'application vers openshift
+# ------------------------------------------
+function deploy(){
+
+    BASE_PATH=${PWD%/*}   # recupère le repertoire racine du projet
+
+    #echoError "Créé nouveau projet sur Openshift" 
+    #sh ./000-CreateProject.sh
+
+    echoError "Change au repertoire openshift/templates/anig"
+    cd $BASE_PATH/openshift/templates/anig
+
+    echoWarning "[ANIG] Déployement de l'agent de l'émetteur d'ANIG"
+    sh ./010-DeploymentConfigAgentAnig.sh
+
+    echoWarning "[ANIG] Déployement de l'ANIG"
+    sh ./020-DeploymentConfigAnig.sh
+
+    echoError "Changer au repertoire openshift/templates/auth-e" 
+    cd $BASE_PATH/openshift/templates/auth-e
+
+    echoWarning "[AUTH_E] Déployement des configs de Keycloak"
+    sh ./010-DeploymentConfigKeycloak.sh
+
+    echoWarning "[AUTH_E] Déployement de l'application auth-e"
+    sh ./020-DeploymentConfigAuth.sh
+    
+    echoError "Change au repertoire openshift/templates/issuer"
+    cd $BASE_PATH/openshift/templates/issuer
+
+    echoWarning "[EMETTEUR] Déployement de l'agent émetteur"
+    sh ./010-DeploymentConfigAgent.sh
+
+    echoWarning "[EMETTEUR] Déployement de la BD de backend"
+    sh ./020-DeploymentConfigBackend.sh
+    
+    echoWarning "[EMETTEUR] Build le config du controlleur"
+    sh ./030-BuildConfigController.sh 
+
+    echoWarning "[EMETTEUR] Déployement du controlleur"
+    sh ./035-DeploymentConfigController.sh 
+
+    echoError "Change au repertoire openshift/templates/verificateur-physique"
+    cd $BASE_PATH/openshift/templates/verificateur-physique
+
+    echoWarning "[VER-PHYS] Déployement de l'agent vérificateur"
+    sh ./010-DeploymentConfigAgent.sh 
+
+    echoWarning "[VER-PHYS] Déployement de l'application de URL courte"
+    sh ./020-DeploymentUrlCourte.sh
+
+    echoWarning "[VER-PHYS] Déployement de l'application daemon"
+    sh ./030-DeploymentConfigDaemon.sh
+
+    cd $BASE_PATH/openshift/templates/issuer
+    echoWarning "[VER_PHYS] Déployement de l'outil de gestion de base de donées"
+    sh ./040-DeploymentConfigGestionDB.sh
+
+    echoError "Vérifiez dans Openshift si votre projet est bien déployé" 
+
+}
+
+# ------------------------------------------
+# Générer les fichiers d'environnement à partir des fichiers de template 
+# ------------------------------------------
+function init-env(){
+
+    BASE_PATH=${PWD%/*}   # recupère le repertoire racine du projet
+
+    echo "Change au repertoire openshift/templates"
+    cd $BASE_PATH/openshift/templates
+    echo $(pwd)
+
+    echo "Faire la copie des fichiers de l'ANIG "
+    
+    echo "Copier fichier issuer anig"
+    cp ./anig/anig-issuer.candy-dev.params                                  ./anig/anig-issuer.candy-dev.params.env
+
+    echo "Faire la copie des fichiers de l'issuer "
+    
+    echo "Copier fichier issuer agent"
+    cp  ./issuer/agent/aries-issuer.candy-dev.params                        ./issuer/agent/aries-issuer.candy-dev.params.env
+
+    echo "Copier fichier issuer backend nestjs"
+    cp  ./issuer/backend/nestjs-backend-dev.params                          ./issuer/backend/nestjs.backend-dev.params.env
+
+    echo "Copier fichier issuer controller build params"
+    cp  ./issuer/controller/controller-port-e-build.params                  ./issuer/controller/controller-port-e-build.params.env
+
+    echo "Copier fichier issuer controller deploy params"
+    cp  ./issuer/controller/controller-port-e-deploy.params                 ./issuer/controller/controller-port-e-deploy.params.env
+
+    echo "Faire copie des fichiers du verificateur-physique"
+    echo "Copier fichier verificateur physique aries consommateur"
+    cp  ./verificateur-physique/agent/aries-consommateur.candy-dev.params   ./verificateur-physique/agent/aries-consommateur.candy-dev.params.env
+
+    echo "Copier fichier verificateur physique daemon"
+    cp  ./verificateur-physique/daemon/port-e-daemon.params                 ./verificateur-physique/daemon/port-e-daemon.params.env
+
+    echo "Copier fichier verificateur physique url-courte"
+    cp  ./verificateur-physique/url-courte/port-e-url-courte.params         ./verificateur-physique/url-courte/port-e-url-courte.params.env
+
+    echo "Copier fichier arduino_secrets du firmware"  
+    cd $BASE_PATH/VerificateurPhysique/firmware/Port-e-daemon 
+    cp ./arduino_secrets_template.h                                         ./arduino_secrets.h 
+
+    echo "Copier fichier d'environnement du daemon" 
+    cd $BASE_PATH/VerificateurPhysique/daemon                  
+    cp ./env-daemon                                                         ./.env 
+
+    echo "Copier fichier d'environnement de l'émmeteur de l'ANIG"
+    cd $BASE_PATH/ANIG-issuer/DEC-controller
+    cp ./env-anig-issuer                                                    ./.env
+
+    echo "Faire la copie des fichiers de l'auth-e "
+    
+    echo "Copier fichier de backend de l'auth-e"
+    cd $BASE_PATH/auth-e/backend
+    cp ./env-auth-e-backend                                                 ./.env
+
+    echo "Les fichiers sont copiés. Merci de les vérifier et remplir les valeurs des variables d'environnement qui sont manquants."
+}
+
+# ------------------------------------------
+# Démarre le tunnel ngrok
+# ------------------------------------------
+function ngrok-start(){
+
+    # Vérifie si ngrok et oc sont installés
+    isNgrokInstalled 
+    isOcInstalled
+
+    # Variable reçoit l'adresse IP
+    IP_ADDR=$1
+    PORT=$2
+
+    if [ -z "${PORT}" ]; then 
+        PORT="80"
+    fi 
+    # Vérifie si l'adresse IP est innexistant; si c'est le cas, fournir une erreur
+    if [ -z ${IP_ADDR} ]; then
+        echo "Erreur de parametrisation" 
+        echo "Utilisation: ${0} ngrok-start <ip address> <port>" 
+        exit 0
+    else 
+        echo "Démarrer le tunnel ngrok pour le serveur a l'adresse IP: [${IP_ADDR}:${PORT}]" 
+        nohup ngrok http --host-header=rewrite ${IP_ADDR}:${PORT} >/dev/null 2>&1 & 
+    fi
+
+    echo "Attends 5 sec avant de continuer"
+    sleep 5s
+
+    echo "Inspectionner l'adresse attribué par ngrok, changer le protocole https pour http" 
+
+    SITE_URL=$(curl http://localhost:4040/api/tunnels | jq --raw-output '.tunnels[] | .public_url'); 
+    SITE_URL="http:$(echo $SITE_URL | cut -d':' -f 2)"
+    echo $SITE_URL
+    checkNgrokTunnelActive
+
+    echo "Seter la variable d'environnement dans Openshift" 
+    oc set env dc/port-e-daemon --overwrite HOST_TUNNEL=$SITE_URL
+
+}
+
+# ------------------------------------------
+# Restore le backup du répertoire des backups vers les répertoires respectives
+# de chaque fichier d'environnement.
+# ------------------------------------------
+function restore(){
+
+    BASE_PATH=${PWD%/*}   # recupère le repertoire racine du projet
+
+    echo "Réalise le restore des fichiers en backup"
+     
+    cp $BASE_PATH/backup-env/anig-issuer.candy-dev.params.env           $BASE_PATH/openshift/templates/anig/anig-issuer.candy-dev.params.env
+    cp $BASE_PATH/backup-env/aries-issuer.candy-dev.params.env          $BASE_PATH/openshift/templates/issuer/agent/aries-issuer.candy-dev.params.env  
+    cp $BASE_PATH/backup-env/nestjs.backend-dev.params.env              $BASE_PATH/openshift/templates/issuer/backend/nestjs.backend-dev.params.env 
+    cp $BASE_PATH/backup-env/controller-port-e-build.params.env         $BASE_PATH/openshift/templates/issuer/controller/controller-port-e-build.params.env 
+    cp $BASE_PATH/backup-env/controller-port-e-deploy.params.env        $BASE_PATH/openshift/templates/issuer/controller/controller-port-e-deploy.params.env 
+    cp $BASE_PATH/backup-env/aries-consommateur.candy-dev.params.env    $BASE_PATH/openshift/templates/verificateur-physique/agent/aries-consommateur.candy-dev.params.env 
+    cp $BASE_PATH/backup-env/port-e-daemon.params.env                   $BASE_PATH/openshift/templates/verificateur-physique/daemon/port-e-daemon.params.env 
+    cp $BASE_PATH/backup-env/port-e-url-courte.params.env               $BASE_PATH/openshift/templates/verificateur-physique/url-courte/port-e-url-courte.params.env
+    cp $BASE_PATH/backup-env/arduino_secrets.h                          $BASE_PATH/VerificateurPhysique/firmware/Port-e-daemon/arduino_secrets.h 
+    cp $BASE_PATH/backup-env/env-daemon                                 $BASE_PATH/VerificateurPhysique/daemon/.env 
+    cp $BASE_PATH/backup-env/env-anig-issuer                            $BASE_PATH/ANIG-issuer/DEC-controller/.env 
+    cp $BASE_PATH/backup-env/env-auth-e-backup                          $BASE_PATH/auth-e/backup/.env
+    echo "Fin du restore"
+}
+
+# ------------------------------------------
+# Évaluation et exécution des commandes
+# ------------------------------------------
+COMMAND=${1}
+
+if [ -z "${COMMAND}" ]; then
+    COMMAND="help"
+fi
+
+# echo "[DEBUG] COMMANDE: " ${COMMAND}
+
+case "${COMMAND}" in
+
+    backup-env_|backup_env)
+        echo "Faire le backup des fichiers d'environnement"
+        backup-env
+        ;;
+
+    creer)
+        echo "Faire la création du projet sur Openshift"
+        creer $2
+        ;;
+
+    deploy)
+        echo "Faire le déployement des templates vers Openshift" 
+        deploy
+        ;;
+
+    down|rm)
+        echo "Arrête les conteineurs et détruit les volumes"
+        ../docker-compose down
+        ;;
+
+    help)
+        usage
+        ;;
+
+    init-env|init|init_env)
+        echo "Faire la création des fichiers d'environnement" 
+        init-env
+        ;;
+
+    logs)
+        echo "Montre les logs des conteineurs en exécution"
+        ../docker-compose logs -f
+        ;;
+
+    ngrok-start|ngrok_start)
+        echo "Démarre a tunnel ngrok"
+        ngrok-start ${2} ${3}
+        ;;
+
+    restore-env|restore_env)
+        echo "Restaure les fichiers d'environnement en backup"
+        restore
+        ;;
+
+    start|up)
+        ../docker-compose start
+        ;;
+
+    stop)
+        ../docker-compose stop 
+        ;;
+    
+    *) 
+        escapedCmd=$(echo "${@}" | sed "s~'~\\\'~g" | sed 's~\"~\\"~g' | sed 's~,~\\,~g')
+        eval ${escapedCmd}
+        ;;
+esac
+
+
+# =============================================================================
+#      Fin du script
+# =============================================================================

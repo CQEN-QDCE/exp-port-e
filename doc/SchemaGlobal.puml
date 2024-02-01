@@ -1,0 +1,89 @@
+@startuml ArchitectureGlobal
+    
+'Références graphique
+!define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/master/dist
+
+'Composants graphique
+!includeurl AWSPuml/AWSSimplified.puml
+!includeurl AWSPuml/General/MobileClient.puml
+!includeurl AWSPuml/Blockchain/Blockchain.puml
+
+'left to right direction
+
+'**************
+'DÉFINITION DES REGROUPEMENTS
+'**************
+
+rectangle "Controle d'accèss physique" {
+    agent "NFC Reader" as reader
+    agent "Micro Controller" as mcontrol
+    agent ESP8266
+    cloud Internet
+    MobileClient(cellcf, "Portefeuille numérique", "appareil de l'employé") #LightBlue
+    }
+
+rectangle "Contrôle d'accèss virtuel"{
+    agent Keycloak
+    agent "http://" as URL
+    agent "Access Denied" as Denied
+    agent "Ressource protegé" as Protege
+    agent Realm
+    agent "Vérificateur /  ACA-Py" as Verifv
+    MobileClient(cellcv, "Portefeuille numérique", "appareil de l'employé") #LightBlue
+    }
+
+rectangle "Gestionnaire d'accès" {
+    agent "Émetteur" as Emetteur
+    actor "Gestionnaire d'accès" as Gestionnaire
+    actor Employé as Employee
+    agent "Agent mediateur" as AM
+    agent "Boite eMail" as Boite
+    agent "Agent ACA-Py" as ACAPYga
+    database "DB" as DB #LightBlue
+    MobileClient(cellga, "Portefeuille numérique", "appareil de l'employé") #LightBlue
+    Blockchain(dltCA, "Blockchain CANdy", "Registre de confiance") #LightBlue
+    }
+
+agent "Agent Aca-Py" as 1acapy
+
+'**************
+'DÉFINITION DES LIENS
+'**************
+
+'LIENS DU CONTROLE D'ACCES PHYSIQUE
+    cellcf --> reader : "Présente token"
+    reader --> cellcf : "Demande token"
+    reader -- mcontrol
+    mcontrol -- ESP8266
+    ESP8266 -- Internet
+
+
+'LIENS DU CONTROLE D'ACCES VIRTUEL
+cellcv --> Keycloak : "Présente preuve"
+Keycloak --> cellcv : "Demande preuve"
+Keycloak --> Denied
+Keycloak <--> Protege
+Keycloak <--> Realm
+Keycloak <--> Verifv
+URL --> Keycloak
+Verifv <--> dltCA : https
+
+'LIENS SANS REGROUPEMENT AU DROIT DU DIAGRAMME
+Internet --> 1acapy
+1acapy <--> dltCA  : "Journalisation accès physique?"
+
+'LIENS De l'ÉMETTEUR
+Emetteur <--> ACAPYga : https
+Emetteur --> DB : https
+Gestionnaire --> DB : "Entrée manuelle"
+Employee --> Emetteur : "Entrée manuelle"
+Emetteur <--> Boite : SMTP
+Employee -[#black,dotted]> Boite
+cellga --> Emetteur : https
+cellga <--> AM : WebSocket
+AM <--> ACAPYga : https
+dltCA <--> cellga : https
+AM <--> dltCA : https
+ACAPYga <--> dltCA : https
+
+@enduml

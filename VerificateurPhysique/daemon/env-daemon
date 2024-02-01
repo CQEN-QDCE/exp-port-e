@@ -1,0 +1,6 @@
+BASE_URL            =                   # Url de base de l'api de l'agent consommateur  
+BASE_SHORT_URL      =                   # Url de base de l'application d'URL courte 
+ENDPOINT_CONNECTION =                   # Endpoint de création de connection à l'agent consommateur
+ENDPOINT_INVITATION =                   # Endpoint de présentation de preuve à l'agent consommateur
+X_API_KEY           =                   # API-Key de l'api de l'agent consommateur 
+APP_PORT            =                   # Porte de communication du serveur 
