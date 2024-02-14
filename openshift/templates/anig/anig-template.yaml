@@ -285,10 +285,10 @@ parameters:
   displayName: Agent endpoint
   description: The endpoint of the agent.
   required: true
-  value: "https://port-e-id-agent.apps.exp.openshift.cqen.ca"
+  value: "https://exp-anig.apps.exp.openshift.cqen.ca"
 - name: AGENT_ADMIN_ENDPOINT
   displayName: Agent endpoint
   description: The admin endpoint of the agent.
   required: true
-  value: "https://port-e-id-agent-admin.apps.exp.openshift.cqen.ca"
+  value: "https://exp-anig-admin.apps.exp.openshift.cqen.ca"
   
