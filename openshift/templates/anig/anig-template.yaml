@@ -43,7 +43,7 @@ objects:
       contextDir: ANIG-issuer/DEC-controller
       git:
         uri: https://github.com/CQEN-QDCE/exp-port-e.git
-        ref: "features/documentation-rapport"
+        ref: "features/submodules"
       type: Git
     strategy:
       dockerStrategy:
@@ -143,7 +143,7 @@ objects:
   metadata:
     name: anig
   spec:
-    host: exp-anig-controller.apps.exp.openshift.cqen.ca
+    host: port-e-id.apps.exp.openshift.cqen.ca
     to:
       kind: Service
       name: anig-controller
@@ -156,7 +156,7 @@ objects:
     wildcardPolicy: None
   status:
     ingress:
-      - host: exp-anig-controller.apps.exp.openshift.cqen.ca
+      - host: port-e-id.apps.exp.openshift.cqen.ca
         routerName: default
         conditions:
           - type: Admitted
@@ -285,10 +285,10 @@ parameters:
   displayName: Agent endpoint
   description: The endpoint of the agent.
   required: true
-  value: "https://exp-anig.apps.exp.openshift.cqen.ca"
+  value: "https://port-e-id-agent.apps.exp.openshift.cqen.ca"
 - name: AGENT_ADMIN_ENDPOINT
   displayName: Agent endpoint
   description: The admin endpoint of the agent.
   required: true
-  value: "https://exp-anig-admin.apps.exp.openshift.cqen.ca"
+  value: "https://port-e-id-agent-admin.apps.exp.openshift.cqen.ca"
   
