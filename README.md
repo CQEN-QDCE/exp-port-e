@@ -113,7 +113,7 @@ Le projet Port-E comprend plusieurs parties et applications qui travaillent ense
 
 ### 4.1.0 Configuration
 
-La configuration des éléments de l'expérimentation se fait soit par des commandes émises dans le script de gestion `manage`, soit par le biais de fichiers d'environnement présents dans les répertoires des éléments respectifs. Cliquez sur les titres des éléments ci-dessous pour obtenir des informations spécifiques à chacun.
+La configuration des éléments de l'expérimentation se fait soit par des commandes émises dans le script de gestion `scripts/manage`, soit par le biais de fichiers d'environnement présents dans les répertoires des éléments respectifs. Cliquez sur les titres des éléments ci-dessous pour obtenir des informations spécifiques à chacun.
 
 1. [Port-E-id](./doc/configuration/anig.md) - Émetteur d\'identité (ANIG - Attestation numérique d\'identité gouvernementale).
 
@@ -158,16 +158,13 @@ Ensuite, il faut mettre les sources des sous-projets à jour.
 git submodule update --init --recursive 
 ```
 
-Pour faire le déploiement des morceaux de l'expérimentation sur une instance Openshift, on a simplement à exécuter le script `manage`. Il faut fournir un nom au projet qui sera crée dans Openshift pour recevoir ce déploiement; remplacez `<nom_projet>` ci-bas par le nom de projet que vous voulez créer sur Openshift. 
-
-
+Pour faire le déploiement des morceaux de l'expérimentation sur une instance Openshift, on a simplement à exécuter le script `scripts/manage`. Il faut fournir un nom au projet qui sera crée dans Openshift pour recevoir ce déploiement; remplacez `<nom_projet>` ci-bas par le nom de projet que vous voulez créer sur Openshift. 
 
 ```bash
 ./scripts/manage creer <nom_projet>
 ./scripts/manage init-env
 ./scripts/manage deploy
 ```
-
 
 #### 4.1.1.2 Post-Installation
 
@@ -179,12 +176,39 @@ Après l'installation de tous les éléments qui composent l'expérimentation, v
 1. Connecter l'ordinateur au réseau (par cellulaire ou wifi, selon la disponibilité);
 1. Lancer les sketches `VerificateurPhysique/firmware/Port-e-daemon/Port-e-daemon.ino` et `VerificateurPhysique/firmware/Port-e-beacon/Port-e-beacon.ino` et ouvir leurs **Serial Monitors**; 
 1. Connecter le cable du webserver NodeMCU à l'ordinateur. Le webserver se connectera automatiquement au réseau (vérifiez dans le fichier `VerificateurPhysique/firmware/Port-e-daemon/arduino_secrets.h` qu'il s'agit du même de l'étape précedente). Prendre en note l'adresse IP alloué au NodeMCU (affiché dans le Serial Monitor); 
-1. Assurez-vous d'être connecté à l'outil de ligne de commande `oc` avec l'instance d'Openshift;
-1. Lancer le script `scripts/manage ngrok_start <ip adresse du NodeMCU>`; ce script lit la configuration du tunnel ngrok via son API, et enregistre au pod `deploymentconfig.apps.openshift.io/port-e-daemon` une variable d'environnement `HOST_TUNNEL`, qui contient l'adresse actuellement alloué au tunnel par ngrok.  
-(OBS: comme le serveur NodeMCU n'a pas de certificat, il ne faut pas utiliser l'adresse https. Le script s'assure de changer le protocole avant d'enregistrer dans le pod d'Openshift). Le pod `port-e-daemon` sera recyclé automatiquement (scale up, down). 
-1. Connecter l'Arduino / Beacon NFC. Accompagner par le **Serial Monitor** la génération de l'adresse.
-1. Reseter le controlleur Arduino pour démarrer la génération et polling d'adresses
+1. Assurez-vous d'être connecté à l'instance d'Openshift avec l'outil de ligne de commande `oc`;
+1. Lancer le script `scripts/manage ngrok_start <ip adresse du NodeMCU>`; ce script lit la configuration du tunnel ngrok via son API, et enregistre au pod `deploymentconfig.apps.openshift.io/port-e-daemon` une variable d'environnement `HOST_TUNNEL`, qui contient l'adresse actuellement alloué au tunnel par ngrok;  
+    *OBS: comme le serveur NodeMCU n'a pas de certificat, il ne faut pas utiliser l'adresse https. Le script s'assure de changer le protocole avant d'enregistrer dans le pod d'Openshift. Le pod `port-e-daemon` sera recyclé automatiquement (scale up, down)*
+
+```
+    $ ./manage ngrok_start 192.168.18.24 80
+    *** ------------------------------------ ***
+    ***  Commande de gestion des opérations  ***
+    *** ------------------------------------ ***
+    Démarre a tunnel ngrok
+    Démarrer le tunnel ngrok pour le serveur a l'adresse IP: [192.168.18.24:80]
+    Attends 5 sec avant de continuer
+    Inspectionner l'adresse attribué par ngrok, changer le protocole https pour http
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                    Dload  Upload   Total   Spent    Left  Speed
+    100   454  100   454    0     0   415k      0 --:--:-- --:--:-- --:--:--  443k
+    http://29c7-107-159-217-164.ngrok-free.app
+    Seter la variable d'environnement dans Openshift
+    deploymentconfig.apps.openshift.io/port-e-daemon updated
+```
+
+6. Connecter l'Arduino / Beacon NFC. Accompagner par le **Serial Monitor** la génération de l'adresse.
+1. Reseter le controlleur Arduino pour démarrer la génération et polling d'adresses.
 1. Approcher le téléphone mobile au *Beacon NFC*, et attendre l'ouverture de la porte.
+
+
+
+
+
+
+
+
+
 
 
 ### 4.2 Démarche de l'expérimentation
