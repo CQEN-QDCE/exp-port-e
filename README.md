@@ -108,12 +108,10 @@ Afin de pouvoir reproduire l'expérimentation, vous trouverez dans les sections:
 
 ### 4.1 Configuration et installation  
 
-Ces instructions vous permettront d\'obtenir une copie du projet opérationnelle et de la déployer sur Openshift, aux fins de développement et de tests.
-
 Le projet Port-E comprend plusieurs parties et applications qui travaillent ensemble pour atteindre les objectifs de Port-E. Même si elles sont indépendantes, elles doivent être installées et configurées individuellement.
 
 
-#### 4.1.0 Configuration
+### 4.1.0 Configuration
 
 La configuration des éléments de l'expérimentation se fait soit par des commandes émises dans le script de gestion `manage`, soit par le biais de fichiers d'environnement présents dans les répertoires des éléments respectifs. Cliquez sur les titres des éléments ci-dessous pour obtenir des informations spécifiques à chacun.
 
@@ -132,27 +130,56 @@ La configuration des éléments de l'expérimentation se fait soit par des comma
 7. [Vérificateur Physique](./doc/configuration/daemon_physique.md) - Daemon de comms. 
 
 
-#### 4.1.1 Installation
+### 4.1.1 Installation
 
-Pour faire le déploiement des morceaux de l'expérimentation, on a simplement a exécuter le script manage.
+Cette section décrit la procédure de préparation et de déploiement de ce projet sur une plateforme d'infonuagique aux fins de développement et de tests. Les instructions fournies ici sont spécifiques à la plateforme Openshift. Si vous souhaitez déployer le projet sur une autre plateforme, vous devrez adapter les scripts de déploiement en conséquence.
+
+
+Veuillez noter que les détails spécifiques de chaque étape peuvent varier en fonction de la configuration de votre environnement et de la plateforme de déploiement choisie.
+
+#### 4.1.1.0 Étapes préparatoires
+
+- La base de code source du projet est hebergée sur github. Assurez-vous d'avoir l'outil `git` dûment installé sur l'ordinateur local avant de démarrer la procédure. 
+
+- Ce déploiement dépend de l'utilisation de l'outil de ligne de commande `oc`; assurez-vous de l'avoir installé sur l'ordinateur et de faire le logon à l'outil avec vos credentielles.  
+
+#### 4.1.1.1 Déploiement
+
+Alors, le premier pas est faire un clone du projet sur l'ordinateur local, et mettre les sources à jour et synchronizés avec la branche `prod`. 
 
 ```bash
-manage creer <nom_projet>
-manage init-env
-manage deploy
+git clone https://github.com/CQEN-QDCE/exp-port-e.git
+cd exp-port-e  
+```
+
+Ensuite, il faut mettre les sources des sous-projets à jour.
+
+```bash
+git submodule update --init --recursive 
+```
+
+Pour faire le déploiement des morceaux de l'expérimentation sur une instance Openshift, on a simplement à exécuter le script `manage`. Il faut fournir un nom au projet qui sera crée dans Openshift pour recevoir ce déploiement; remplacez `<nom_projet>` ci-bas par le nom de projet que vous voulez créer sur Openshift. 
+
+
+
+```bash
+./scripts/manage creer <nom_projet>
+./scripts/manage init-env
+./scripts/manage deploy
 ```
 
 
-#### 4.1.2 Post-Installation
+#### 4.1.1.2 Post-Installation
 
 Après l'installation de tous les éléments qui composent l'expérimentation, vous devez compléter la configuration manuelle entre Keycloak et le module vc-authn-oidc afin de pouvoir vous authentifier, tel que décrit dans la documentation [Port-E-vc-authn-oidc](./openshift/templates/verifier-vcauthn/README.md).
 
 
-#### 4.1.3 Démarrage de l'application physique
+### 4.1.2 Démarrage de l'application physique
 
 1. Connecter l'ordinateur au réseau (par cellulaire ou wifi, selon la disponibilité);
 1. Lancer les sketches `VerificateurPhysique/firmware/Port-e-daemon/Port-e-daemon.ino` et `VerificateurPhysique/firmware/Port-e-beacon/Port-e-beacon.ino` et ouvir leurs **Serial Monitors**; 
 1. Connecter le cable du webserver NodeMCU à l'ordinateur. Le webserver se connectera automatiquement au réseau (vérifiez dans le fichier `VerificateurPhysique/firmware/Port-e-daemon/arduino_secrets.h` qu'il s'agit du même de l'étape précedente). Prendre en note l'adresse IP alloué au NodeMCU (affiché dans le Serial Monitor); 
+1. Assurez-vous d'être connecté à l'outil de ligne de commande `oc` avec l'instance d'Openshift;
 1. Lancer le script `scripts/manage ngrok_start <ip adresse du NodeMCU>`; ce script lit la configuration du tunnel ngrok via son API, et enregistre au pod `deploymentconfig.apps.openshift.io/port-e-daemon` une variable d'environnement `HOST_TUNNEL`, qui contient l'adresse actuellement alloué au tunnel par ngrok.  
 (OBS: comme le serveur NodeMCU n'a pas de certificat, il ne faut pas utiliser l'adresse https. Le script s'assure de changer le protocole avant d'enregistrer dans le pod d'Openshift). Le pod `port-e-daemon` sera recyclé automatiquement (scale up, down). 
 1. Connecter l'Arduino / Beacon NFC. Accompagner par le **Serial Monitor** la génération de l'adresse.
