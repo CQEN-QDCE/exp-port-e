@@ -48,6 +48,8 @@ Le nom du projet Port-E, inspiré du film Wall-E, signifie "Portefeuille" dans l
 
 6. [Conclusion](#60-conclusion)
 
+7. [Travaux futurs](#70-travaux-futurs)
+
 [Annexes](#annexes)
 
 ---
@@ -489,6 +491,18 @@ Enfin, nous constatons que la notion de portefeuille numérique dans le contexte
 En conclusion, l’utilisation d’un portefeuille numérique pour les employés est relativement simple dans un environnement <u>d’expérimentation</u>, car les règles d’utilisation sont déjà bien définies. L’identité numérique facilite l’application de ces règles.
 
 Il convient de souligner que les conclusions tirées de cette expérimentation doivent être prises en compte avec prudence lors de la mise en œuvre d’une application réelle.
+
+
+# 7.0 Travaux futurs 
+
+- Adopter méthode de démarrage connectionless, en utilisant le protocole `out-of-band (oob)`; pour gagner du temps de démarrage, améliorer l'usabilité en éliminant des étapes d'intéraction avec les utilisateurs.
+
+- Changer le pooling du daemon de la porte pour autre méthode d'attente. Peut-être envisager l'utilisation de l'architecture pub/sub pour remplacer le pooling? 
+
+- Changer la méthode de communication avec l'objet IoT (serveur NodeMCU): remplacer la création d'un tunnel ngrok entre NodeMCU et l'application daemon dans le cloud par un orchestrateur qui jouera le rôle de dispatcher des requisitions entrantes et sortantes, par moyen de l'architecture pub/sub, par example.  
+
+- Implementation d'une procédure de backup unifié pour tous les composants du système: base de données, portefeuilles, etc.
+
 
 <!-- ============================================= Sections de fin de documentation ============================================= -->
 
