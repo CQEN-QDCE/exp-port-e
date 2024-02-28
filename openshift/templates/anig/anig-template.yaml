@@ -43,7 +43,7 @@ objects:
       contextDir: ANIG-issuer/DEC-controller
       git:
         uri: https://github.com/CQEN-QDCE/exp-port-e.git
-        ref: "features/submodules"
+        ref: "prod"
       type: Git
     strategy:
       dockerStrategy:
@@ -143,7 +143,7 @@ objects:
   metadata:
     name: anig
   spec:
-    host: port-e-id.apps.exp.openshift.cqen.ca
+    host: exp-anig-controller.apps.exp.openshift.cqen.ca
     to:
       kind: Service
       name: anig-controller
@@ -156,7 +156,7 @@ objects:
     wildcardPolicy: None
   status:
     ingress:
-      - host: port-e-id.apps.exp.openshift.cqen.ca
+      - host: exp-anig-controller.apps.exp.openshift.cqen.ca
         routerName: default
         conditions:
           - type: Admitted
