@@ -39,10 +39,10 @@ const IQNIdentiteForm = () => {
   const [issuanceDate, setIssuanceDate]             = useState(getFormattedDate(currentDate));
   const [expirationDate, setExpirationDate]         = useState(getFormattedDate(defaultExpirationDate));
   const [identificationLevel, setIdentificationLevel] = useState(1);
-  const [firstNames, setFirstNames]                 = useState('Pierrette');
-  const [lastName, setLastName]                     = useState('Tremblay');
+  const [firstNames, setFirstNames]                 = useState('Sarah');
+  const [lastName, setLastName]                     = useState('Courcy');
   const [birthDate, setBirthDate]                   = useState('1976-11-08');
-  const [parent1FullName, setParent1FullName]         = useState('Pierrette Tremblay');
+  const [parent1FullName, setParent1FullName]         = useState('Sarah Courcy');
   const [parent2FullName, setParent2FullName]         = useState('inconnu');
   
   const [selectedFile, setSelectedFile]             = useState('');
@@ -186,14 +186,14 @@ const IQNIdentiteForm = () => {
       let target = e.target.innerText; 
      
       if(target === 'Vous' || target === 'Yourself'){
-        setFirstNames('Pierrette'); 
-        setParent2FullName('Pierrette Tremblay'); 
+        setFirstNames('Sarah'); 
+        setParent2FullName('Sarah Courcy'); 
         setParent1FullName('Mathieu Tremblay'); 
         setBirthDate('1976-11-08'); 
         setIssuanceDate('2019-07-17');
       } else {
         setFirstNames('Alice'); 
-        setParent2FullName('Pierrette Tremblay'); 
+        setParent2FullName('Sarah Courcy'); 
         setParent1FullName('Michel Tremblay'); 
         setBirthDate('2020-12-22'); 
         setIssuanceDate('2020-12-22');

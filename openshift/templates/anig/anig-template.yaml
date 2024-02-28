@@ -43,7 +43,7 @@ objects:
       contextDir: ANIG-issuer/DEC-controller
       git:
         uri: https://github.com/CQEN-QDCE/exp-port-e.git
-        ref: "features/documentation-rapport"
+        ref: "prod"
       type: Git
     strategy:
       dockerStrategy:
